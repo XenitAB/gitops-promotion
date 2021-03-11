@@ -43,13 +43,22 @@ func main() {
 	var message string
 	switch os.Args[1] {
 	case "new":
-		newCommand.Parse(os.Args[2:])
+		err := newCommand.Parse(os.Args[2:])
+		if err != nil {
+			panic(err)
+		}
 		message, commandErr = command.NewCommand(ctx, path, *newToken, *newGroup, *newApp, *newTag)
 	case "promote":
-		promoteCommand.Parse(os.Args[2:])
+		err := promoteCommand.Parse(os.Args[2:])
+		if err != nil {
+			panic(err)
+		}
 		message, commandErr = command.PromoteCommand(ctx, path, *promoteToken)
 	case "status":
-		statusCommand.Parse(os.Args[2:])
+		err := statusCommand.Parse(os.Args[2:])
+		if err != nil {
+			panic(err)
+		}
 		message, commandErr = command.StatusCommand(ctx, path, *statusToken)
 	default:
 		flag.PrintDefaults()

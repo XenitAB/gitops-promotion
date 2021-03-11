@@ -2,7 +2,7 @@ TAG = latest
 IMG ?= docker.io/phillebaba/gitops-promotion:$(TAG)
 
 lint:
-	golangci-lint run -E misspell
+	golangci-lint run -E misspell ./...
 
 fmt:
 	go fmt ./...
