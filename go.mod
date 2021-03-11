@@ -9,7 +9,7 @@ require (
 	github.com/libgit2/git2go/v31 v31.4.12
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/whilp/git-urls v1.0.0
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/apimachinery v0.20.2
 )
 
