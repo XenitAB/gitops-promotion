@@ -25,4 +25,6 @@
 
 # End of https://www.toptal.com/developers/gitignore/api/go
 
-/bin/
+bin
+tmp
+__debug_bin
