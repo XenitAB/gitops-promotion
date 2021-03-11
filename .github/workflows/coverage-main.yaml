@@ -1,0 +1,29 @@
+name: Coverage main
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  GO_VERSION: "1.16"
+
+jobs:
+  coverage-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: coverage
+        run: |
+          mkdir -p tmp
+          make cover
+      - name: Send coverage to coverall
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: tmp/coverage.out
+          #ignore: cmd/azad-kube-proxy/main.go,pkg/proxy/proxy.go,cmd/kubectl-azad-proxy/main.go

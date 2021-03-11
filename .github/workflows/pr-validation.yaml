@@ -1,0 +1,167 @@
+name: PR Validation
+
+on: pull_request
+
+env:
+  NAME: "gitops-promotion"
+  GO_VERSION: "1.16"
+  GOLANGCI_LINT_VERSION: "v1.35"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2.5.1
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+
+  fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run fmt
+        run: |
+          make fmt
+      - name: Check if working tree is dirty
+        run: |
+          if [[ $(git status --porcelain) ]]; then
+            git diff
+            echo 'run make fmt and commit changes'
+            exit 1
+          fi
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Run test
+        run: |
+          make test
+
+  gosec:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Setup gosec
+        env:
+          GOSEC_VERSION: "2.6.1"
+          GOSEC_SHA: "80950b35d13a0f68b75878da030ee305def6170f6db01d1f8021ee198eb84b25"
+        run: |
+          curl -Lo ./gosec.tar.gz https://github.com/securego/gosec/releases/download/v${GOSEC_VERSION}/gosec_${GOSEC_VERSION}_linux_amd64.tar.gz
+          DOWNLOAD_GOSEC_SHA=$(openssl sha1 -sha256 gosec.tar.gz | awk '{print $2}')
+          if [[ "${GOSEC_SHA}" != "${DOWNLOAD_GOSEC_SHA}" ]]; then
+              echo "Downloaded checksum (${DOWNLOAD_GOSEC_SHA}) for terraform-docs does not match expected value: ${GOSEC_SHA}"
+              exit 1
+          fi
+          tar xzvf ./gosec.tar.gz
+          mkdir -p ~/.local/bin/
+          mv ./gosec ~/.local/bin/gosec
+      - name: Run gosec
+        run: |
+          export PATH=${PATH}:~/.local/bin
+          make gosec
+
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: returntocorp/semgrep-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+          publishDeployment: 284
+
+  #coverage:
+  #  runs-on: ubuntu-latest
+  #  steps:
+  #    - name: Clone repo
+  #      uses: actions/checkout@v2
+  #    - name: Setup go
+  #      uses: actions/setup-go@v2
+  #      with:
+  #        go-version: ${{ env.GO_VERSION }}
+  #    - name: coverage
+  #      env:
+  #        CLIENT_ID: ${{ secrets.CLIENT_ID }}
+  #        CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+  #        TENANT_ID: ${{ secrets.TENANT_ID }}
+  #        TEST_USER_SP_CLIENT_ID: ${{ secrets.TEST_USER_SP_CLIENT_ID }}
+  #        TEST_USER_SP_CLIENT_SECRET: ${{ secrets.TEST_USER_SP_CLIENT_SECRET }}
+  #        TEST_USER_SP_RESOURCE: ${{ secrets.TEST_USER_SP_RESOURCE }}
+  #        TEST_USER_SP_OBJECT_ID: ${{ secrets.TEST_USER_SP_OBJECT_ID }}
+  #        TEST_USER_OBJECT_ID: ${{ secrets.TEST_USER_OBJECT_ID }}
+  #      run: |
+  #        mkdir -p tmp
+  #        make cover
+  #    - name: Send coverage to coverall
+  #      uses: shogo82148/actions-goveralls@v1
+  #      with:
+  #        path-to-profile: tmp/coverage.out
+  #        ignore: cmd/azad-kube-proxy/main.go,pkg/proxy/proxy.go
+
+  build-container:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Prepare
+        id: prep
+        run: |
+          VERSION=sha-${GITHUB_SHA::8}
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          fi
+          echo ::set-output name=BUILD_DATE::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+          echo ::set-output name=VERSION::${VERSION}
+      - uses: brpaz/hadolint-action@v1.3.1
+        with:
+          dockerfile: Dockerfile
+      - name: Cache container layers
+        uses: actions/cache@v2.1.4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build and load (current arch)
+        run: |
+          docker buildx build --load -t ${{ env.NAME }}:${{ steps.prep.outputs.VERSION }} .
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.NAME }}:${{ steps.prep.outputs.VERSION }}
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
