@@ -10,7 +10,7 @@ require (
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/whilp/git-urls v1.0.0
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.20.2
+	k8s.io/apimachinery v0.20.5
 )
 
 replace github.com/fluxcd/image-automation-controller => github.com/fluxcd/image-automation-controller v0.6.2-0.20210303130129-2eebaa46c79b
