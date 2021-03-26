@@ -1,5 +1,5 @@
-TAG = latest
-IMG ?= docker.io/phillebaba/gitops-promotion:$(TAG)
+TAG = dev
+IMG ?= ghcr.io/xenitab/gitops-promotion:$(TAG)
 
 lint:
 	golangci-lint run -E misspell ./...

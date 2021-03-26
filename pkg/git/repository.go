@@ -52,7 +52,7 @@ func (g *Repository) CreateBranch(branchName string, force bool) error {
 	if err == nil {
 		err = branch.Delete()
 		if err != nil {
-			return err
+			return fmt.Errorf("could not delete existing branch %q: %v", branchName, err)
 		}
 	}
 
@@ -137,8 +137,9 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 func (g *Repository) Push(branchName string) error {
 	remote, err := g.gitRepository.Remotes.Lookup(DefaultRemote)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not find remote %q: %v", DefaultRemote, err)
 	}
+
 	callback := git2go.RemoteCallbacks{
 		CredentialsCallback: func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
 			cred, err := git2go.NewCredentialUserpassPlaintext(DefaultUsername, g.token)
@@ -148,9 +149,10 @@ func (g *Repository) Push(branchName string) error {
 			return cred, nil
 		},
 	}
-	err = remote.Push([]string{fmt.Sprintf("+refs/heads/%s", branchName)}, &git2go.PushOptions{RemoteCallbacks: callback})
+	branches := []string{fmt.Sprintf("+refs/heads/%s", branchName)}
+	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: callback})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed pushing branches %s: %v", branches, err)
 	}
 	return nil
 }
