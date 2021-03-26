@@ -51,11 +51,11 @@ func NewCommand(ctx context.Context, path, token, group, app, tag string) (strin
 func PromoteCommand(ctx context.Context, path, token string) (string, error) {
 	cfg, err := getConfig(path)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not get configuration: %v", err)
 	}
 	repo, err := getRepository(ctx, path, token)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not get repository: %v", err)
 	}
 	pr, err := repo.GetPRThatCausedCurrentCommit(ctx)
 	if err != nil {
@@ -74,7 +74,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 		}
 		nextEnv, err := cfg.NextEnvironment(state.Env)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("could not get next environment: %v", err)
 		}
 		state.Env = nextEnv.Name
 	}
@@ -119,11 +119,11 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	}
 	auto, err := cfg.IsEnvironmentAutomated(state.Env)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not get environment automation state: %v", err)
 	}
 	err = repo.CreatePR(ctx, state.BranchName(), auto, state)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("could not create a PR: %v", err)
 	}
 	return "created promotions pull request", nil
 }
