@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/fluxcd/image-automation-controller v0.6.1
-	github.com/fluxcd/image-reflector-controller/api v0.7.0
+	github.com/fluxcd/image-reflector-controller/api v0.8.0
 	github.com/jfrog/jfrog-client-go v0.20.1
 	github.com/libgit2/git2go/v31 v31.4.14
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
