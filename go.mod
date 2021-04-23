@@ -3,7 +3,7 @@ module github.com/xenitab/gitops-promotion
 go 1.16
 
 require (
-	github.com/fluxcd/image-automation-controller v0.6.1
+	github.com/fluxcd/image-automation-controller v0.9.0
 	github.com/fluxcd/image-reflector-controller/api v0.7.0
 	github.com/jfrog/jfrog-client-go v0.20.1
 	github.com/libgit2/git2go/v31 v31.4.14
