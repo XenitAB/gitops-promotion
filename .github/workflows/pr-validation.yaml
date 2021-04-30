@@ -30,7 +30,7 @@ jobs:
           sudo cmake --build . --target install
           sudo ldconfig
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2.5.1
+        uses: golangci/golangci-lint-action@v2.5.2
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
 
