@@ -13,6 +13,9 @@ vet:
 test: fmt vet
 	go test ./...
 
+gosec:
+	gosec ./...
+
 cover:
 	mkdir -p tmp
 	go test -timeout 1m ./... -coverprofile=tmp/coverage.out
