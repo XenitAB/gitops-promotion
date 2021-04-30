@@ -207,11 +207,12 @@ func (g *AzdoGITProvider) GetPRWithBranch(ctx context.Context, source, target st
 	}
 
 	pr := (*prs)[0]
-	result := PullRequest{
-		ID:          *pr.PullRequestId,
-		Title:       *pr.Title,
-		Description: *pr.Description,
+
+	result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
+	if err != nil {
+		return PullRequest{}, nil
 	}
+
 	return result, nil
 }
 
@@ -237,10 +238,11 @@ func (g *AzdoGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string)
 		return PullRequest{}, fmt.Errorf("no PR found for commit %q", sha)
 	}
 	pr := results[0][sha][0]
-	result := PullRequest{
-		ID:          *pr.PullRequestId,
-		Title:       *pr.Title,
-		Description: *pr.Description,
+
+	result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
+	if err != nil {
+		return PullRequest{}, nil
 	}
+
 	return result, nil
 }

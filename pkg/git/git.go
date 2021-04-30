@@ -66,3 +66,30 @@ func parsePrState(body string) (PRState, error) {
 	}
 	return prState, nil
 }
+
+func newPR(id *int, title *string, description *string, state *PRState) (PullRequest, error) {
+	if id == nil {
+		return PullRequest{}, fmt.Errorf("id can't be empty")
+	}
+
+	if title == nil {
+		return PullRequest{}, fmt.Errorf("title can't be empty")
+	}
+
+	d := ""
+	if description != nil {
+		d = *description
+	}
+
+	s := PRState{}
+	if state != nil {
+		s = *state
+	}
+
+	return PullRequest{
+		ID:          *id,
+		Title:       *title,
+		Description: d,
+		State:       s,
+	}, nil
+}
