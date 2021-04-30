@@ -210,7 +210,7 @@ func (g *AzdoGITProvider) GetPRWithBranch(ctx context.Context, source, target st
 
 	result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
 	if err != nil {
-		return PullRequest{}, nil
+		return PullRequest{}, err
 	}
 
 	return result, nil
@@ -241,7 +241,7 @@ func (g *AzdoGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string)
 
 	result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
 	if err != nil {
-		return PullRequest{}, nil
+		return PullRequest{}, err
 	}
 
 	return result, nil
