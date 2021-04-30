@@ -4,8 +4,6 @@ on: pull_request
 
 env:
   NAME: "gitops-promotion"
-  GO_VERSION: "1.16"
-  GOLANGCI_LINT_VERSION: "v1.35"
 
 jobs:
   lint:
@@ -18,7 +16,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: "1.16"
       - name: Install libgit2
         run: |
           cd /tmp
@@ -30,9 +28,9 @@ jobs:
           sudo cmake --build . --target install
           sudo ldconfig
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v2.5.1
+        uses: golangci/golangci-lint-action@v2.5.2
         with:
-          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          version: "v1.35"
 
   fmt:
     runs-on: ubuntu-latest
@@ -42,7 +40,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: "1.16"
       - name: Run fmt
         run: |
           make fmt
@@ -62,7 +60,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: "1.16"
       - name: Install libgit2
         run: |
           cd /tmp
@@ -87,7 +85,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: "1.16"
       - name: Setup gosec
         env:
           GOSEC_VERSION: "2.6.1"
@@ -126,7 +124,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v2
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: "1.16"
       - name: Install libgit2
         run: |
           cd /tmp
@@ -160,11 +158,11 @@ jobs:
           fi
           echo ::set-output name=BUILD_DATE::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo ::set-output name=VERSION::${VERSION}
-      - uses: brpaz/hadolint-action@v1.3.1
+      - uses: brpaz/hadolint-action@v1.4.0
         with:
           dockerfile: Dockerfile
       - name: Cache container layers
-        uses: actions/cache@v2.1.4
+        uses: actions/cache@v2.1.5
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
