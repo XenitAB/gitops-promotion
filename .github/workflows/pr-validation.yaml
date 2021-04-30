@@ -19,6 +19,16 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ env.GO_VERSION }}
+      - name: Install libgit2
+        run: |
+          cd /tmp
+          git clone https://github.com/libgit2/libgit2.git
+          cd libgit2
+          git checkout maint/v1.1
+          mkdir build && cd build
+          cmake ..
+          sudo cmake --build . --target install
+          sudo ldconfig
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2.5.1
         with:
@@ -44,18 +54,28 @@ jobs:
             exit 1
           fi
 
-  #test:
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: Clone repo
-  #      uses: actions/checkout@v2
-  #    - name: Setup go
-  #      uses: actions/setup-go@v2
-  #      with:
-  #        go-version: ${{ env.GO_VERSION }}
-  #    - name: Run test
-  #      run: |
-  #        make test
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install libgit2
+        run: |
+          cd /tmp
+          git clone https://github.com/libgit2/libgit2.git
+          cd libgit2
+          git checkout maint/v1.1
+          mkdir build && cd build
+          cmake ..
+          sudo cmake --build . --target install
+          sudo ldconfig
+      - name: Run test
+        run: |
+          make test
 
   gosec:
     runs-on: ubuntu-latest
@@ -87,44 +107,44 @@ jobs:
           export PATH=${PATH}:~/.local/bin
           make gosec
 
-  semgrep:
+  # semgrep:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v1
+  #     - uses: returntocorp/semgrep-action@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+  #         publishDeployment: 284
+
+  coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
-      - uses: returntocorp/semgrep-action@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Clone repo
+        uses: actions/checkout@v2
+      - name: Setup go
+        uses: actions/setup-go@v2
         with:
-          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-          publishDeployment: 284
-
-  #coverage:
-  #  runs-on: ubuntu-latest
-  #  steps:
-  #    - name: Clone repo
-  #      uses: actions/checkout@v2
-  #    - name: Setup go
-  #      uses: actions/setup-go@v2
-  #      with:
-  #        go-version: ${{ env.GO_VERSION }}
-  #    - name: coverage
-  #      env:
-  #        CLIENT_ID: ${{ secrets.CLIENT_ID }}
-  #        CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-  #        TENANT_ID: ${{ secrets.TENANT_ID }}
-  #        TEST_USER_SP_CLIENT_ID: ${{ secrets.TEST_USER_SP_CLIENT_ID }}
-  #        TEST_USER_SP_CLIENT_SECRET: ${{ secrets.TEST_USER_SP_CLIENT_SECRET }}
-  #        TEST_USER_SP_RESOURCE: ${{ secrets.TEST_USER_SP_RESOURCE }}
-  #        TEST_USER_SP_OBJECT_ID: ${{ secrets.TEST_USER_SP_OBJECT_ID }}
-  #        TEST_USER_OBJECT_ID: ${{ secrets.TEST_USER_OBJECT_ID }}
-  #      run: |
-  #        mkdir -p tmp
-  #        make cover
-  #    - name: Send coverage to coverall
-  #      uses: shogo82148/actions-goveralls@v1
-  #      with:
-  #        path-to-profile: tmp/coverage.out
-  #        ignore: cmd/azad-kube-proxy/main.go,pkg/proxy/proxy.go
+          go-version: ${{ env.GO_VERSION }}
+      - name: Install libgit2
+        run: |
+          cd /tmp
+          git clone https://github.com/libgit2/libgit2.git
+          cd libgit2
+          git checkout maint/v1.1
+          mkdir build && cd build
+          cmake ..
+          sudo cmake --build . --target install
+          sudo ldconfig
+      - name: coverage
+        run: |
+          make cover
+    #  - name: Send coverage to coverall
+    #    uses: shogo82148/actions-goveralls@v1
+    #    with:
+    #      path-to-profile: tmp/coverage.out
+    #      ignore: cmd/azad-kube-proxy/main.go,pkg/proxy/proxy.go
 
   build-container:
     runs-on: ubuntu-latest
