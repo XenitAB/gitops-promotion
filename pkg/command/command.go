@@ -88,18 +88,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 
 	// Update image tag
 	manifestPath := fmt.Sprintf("%s/%s/%s", repo.GetRootDir(), state.Group, state.Env)
-	policies := []imagev1alpha1_reflect.ImagePolicy{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      state.App,
-				Namespace: state.Group,
-			},
-			Status: imagev1alpha1_reflect.ImagePolicyStatus{
-				LatestImage: fmt.Sprintf("%s:%s", state.App, state.Tag),
-			},
-		},
-	}
-	_, err = update.UpdateWithSetters(manifestPath, manifestPath, policies)
+	err = updateImageTag(manifestPath, state.App, state.Group, state.Tag)
 	if err != nil {
 		return "", fmt.Errorf("failed updating manifests: %v", err)
 	}
@@ -173,4 +162,25 @@ func StatusCommand(ctx context.Context, path, token string) (string, error) {
 		return "status check has succeed", nil
 	}
 	return "", fmt.Errorf("commit status check has timed out %q", pr.State.Sha)
+}
+
+func updateImageTag(path, app, group, tag string) error {
+	policies := []imagev1alpha1_reflect.ImagePolicy{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      app,
+				Namespace: group,
+			},
+			Status: imagev1alpha1_reflect.ImagePolicyStatus{
+				LatestImage: fmt.Sprintf("%s:%s", app, tag),
+			},
+		},
+	}
+
+	_, err := update.UpdateWithSetters(path, path, policies)
+	if err != nil {
+		return fmt.Errorf("failed updating manifests: %v", err)
+	}
+
+	return nil
 }
