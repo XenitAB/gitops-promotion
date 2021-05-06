@@ -74,7 +74,6 @@ func TestNewPR(t *testing.T) {
 			if err.Error() != c.expectedErr {
 				t.Errorf("Expected err to be '%q' but received: %q", c.expectedErr, err.Error())
 			}
-
 		}
 	}
 }
