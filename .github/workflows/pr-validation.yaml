@@ -158,7 +158,7 @@ jobs:
           fi
           echo ::set-output name=BUILD_DATE::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
           echo ::set-output name=VERSION::${VERSION}
-      - uses: brpaz/hadolint-action@v1.4.0
+      - uses: brpaz/hadolint-action@v1.5.0
         with:
           dockerfile: Dockerfile
       - name: Cache container layers
