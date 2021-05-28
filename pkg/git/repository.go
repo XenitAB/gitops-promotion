@@ -169,12 +169,20 @@ func (g *Repository) MergePR(ctx context.Context, id int, sha string) error {
 	return g.gitProvider.MergePR(ctx, id, sha)
 }
 
-func (g *Repository) GetPRForCurrentBranch(ctx context.Context) (PullRequest, error) {
+func (g *Repository) GetBranchName() (string, error) {
 	head, err := g.gitRepository.Head()
 	if err != nil {
-		return PullRequest{}, err
+		return "", err
 	}
 	branchName, err := head.Branch().Name()
+	if err != nil {
+		return "", err
+	}
+	return branchName, nil
+}
+
+func (g *Repository) GetPRForCurrentBranch(ctx context.Context) (PullRequest, error) {
+	branchName, err := g.GetBranchName()
 	if err != nil {
 		return PullRequest{}, err
 	}

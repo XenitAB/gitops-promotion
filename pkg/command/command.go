@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/fluxcd/image-automation-controller/pkg/update"
@@ -125,6 +126,15 @@ func StatusCommand(ctx context.Context, path, token string) (string, error) {
 	repo, err := getRepository(ctx, path, token)
 	if err != nil {
 		return "", err
+	}
+
+	// If branch does not contain promote it was manual, return early
+	branchName, err := repo.GetBranchName()
+	if err != nil {
+		return "", err
+	}
+	if strings.HasPrefix(branchName, git.PromoteBranchPrefix) {
+		return "Promotion was manual, skipping check", nil
 	}
 
 	// get current pr
