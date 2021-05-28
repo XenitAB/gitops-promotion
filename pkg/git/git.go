@@ -9,7 +9,7 @@ import (
 const DefaultUsername = "git"
 const DefaultRemote = "origin"
 const DefaultBranch = "main"
-const PromoteBranch = "promote/"
+const PromoteBranchPrefix = "promote/"
 
 type Status struct {
 	Succeeded bool
