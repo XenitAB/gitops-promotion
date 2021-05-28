@@ -133,7 +133,7 @@ func StatusCommand(ctx context.Context, path, token string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if strings.HasPrefix(branchName, "promote/") {
+	if strings.HasPrefix(branchName, git.PromoteBranch) {
 		return "Promotion was manual, skipping check", nil
 	}
 

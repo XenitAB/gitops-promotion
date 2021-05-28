@@ -9,6 +9,7 @@ import (
 const DefaultUsername = "git"
 const DefaultRemote = "origin"
 const DefaultBranch = "main"
+const PromoteBranch = "promote/"
 
 type Status struct {
 	Succeeded bool
@@ -46,7 +47,7 @@ func (p PRState) Description() (string, error) {
 }
 
 func (p PRState) BranchName() string {
-	return fmt.Sprintf("promote/%s-%s", p.Group, p.App)
+	return fmt.Sprintf("%s%s-%s", PromoteBranch, p.Group, p.App)
 }
 
 func parsePrState(body string) (PRState, error) {
