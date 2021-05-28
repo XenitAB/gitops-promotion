@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/andybalholm/brotli v1.0.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/fluxcd/image-automation-controller v0.9.1
+	github.com/fluxcd/image-automation-controller v0.10.0
 	github.com/fluxcd/image-reflector-controller/api v0.9.1
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect
@@ -18,7 +18,7 @@ require (
 	github.com/google/go-containerregistry v0.5.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
-	github.com/jfrog/jfrog-client-go v0.22.3
+	github.com/jfrog/jfrog-client-go v0.23.1
 	github.com/json-iterator/go v1.1.11 // indirect
 	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
@@ -34,7 +34,7 @@ require (
 	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.21.0
+	k8s.io/apimachinery v0.21.1
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.1.1 // indirect
 )
