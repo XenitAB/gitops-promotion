@@ -128,7 +128,7 @@ func StatusCommand(ctx context.Context, path, token string) (string, error) {
 		return "", err
 	}
 
-	// If branch does not contain promote it was manunal, return early
+	// If branch does not contain promote it was manual, return early
 	branchName, err := repo.GetBranchName()
 	if err != nil {
 		return "", err
