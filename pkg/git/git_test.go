@@ -125,9 +125,7 @@ func cloneRepository(url, username, password, path string) error {
 }
 
 func basicAuthMethod(username, password string) (*scgit.Auth, error) {
-	var credCallback git2go.CredentialsCallback
-
-	credCallback = func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
+	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
 		cred, err := git2go.NewCredUserpassPlaintext(username, password)
 		if err != nil {
 			return nil, err
