@@ -1,5 +1,11 @@
 TAG = dev
 IMG ?= ghcr.io/xenitab/gitops-promotion:$(TAG)
+TEST_ENV_FILE = tmp/test_env
+
+ifneq (,$(wildcard $(TEST_ENV_FILE)))
+    include $(TEST_ENV_FILE)
+    export
+endif
 
 lint:
 	golangci-lint run -E misspell ./...
@@ -10,8 +16,10 @@ fmt:
 vet:
 	go vet ./...
 
+.SILENT: test
+.PHONY: test
 test: fmt vet
-	go test ./...
+	go test -timeout 1m ./... -cover
 
 gosec:
 	gosec ./...

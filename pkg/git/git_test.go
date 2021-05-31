@@ -1,6 +1,12 @@
 package git
 
-import "testing"
+import (
+	"os"
+	"testing"
+
+	scgit "github.com/fluxcd/source-controller/pkg/git"
+	git2go "github.com/libgit2/git2go/v31"
+)
 
 func TestNewPR(t *testing.T) {
 	cases := []struct {
@@ -84,4 +90,50 @@ func toStringPtr(s string) *string {
 
 func toIntPtr(i int) *int {
 	return &i
+}
+
+func getEnvOrSkip(t *testing.T, key string) string {
+	t.Helper()
+	value := os.Getenv(key)
+	if value == "" {
+		t.Skipf("Skipping test since environment variable %q is not set", key)
+	}
+
+	return value
+}
+
+func cloneRepository(url, username, password, path string) error {
+	auth, err := basicAuthMethod(username, password)
+	if err != nil {
+		return err
+	}
+
+	_, err = git2go.Clone(url, path, &git2go.CloneOptions{
+		FetchOptions: &git2go.FetchOptions{
+			DownloadTags: git2go.DownloadTagsNone,
+			RemoteCallbacks: git2go.RemoteCallbacks{
+				CredentialsCallback: auth.CredCallback,
+			},
+		},
+		CheckoutBranch: DefaultBranch,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func basicAuthMethod(username, password string) (*scgit.Auth, error) {
+	var credCallback git2go.CredentialsCallback
+
+	credCallback = func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
+		cred, err := git2go.NewCredUserpassPlaintext(username, password)
+		if err != nil {
+			return nil, err
+		}
+		return cred, nil
+	}
+
+	return &scgit.Auth{CredCallback: credCallback}, nil
 }

@@ -7,6 +7,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/fluxcd/image-automation-controller v0.10.0
 	github.com/fluxcd/image-reflector-controller/api v0.9.1
+	github.com/fluxcd/source-controller v0.9.0
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect
 	github.com/go-openapi/errors v0.20.0 // indirect
@@ -26,6 +27,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/pierrec/lz4/v4 v4.1.6 // indirect
+	github.com/stretchr/testify v1.7.0
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/whilp/git-urls v1.0.0
 	github.com/xlab/treeprint v1.1.0 // indirect
