@@ -72,6 +72,9 @@ jobs:
           sudo cmake --build . --target install
           sudo ldconfig
       - name: Run test
+        env:
+          AZDO_PAT: ${{ secrets.AZDO_PAT }}
+          AZDO_URL: ${{ secrets.AZDO_URL }}
         run: |
           make test
 
@@ -136,6 +139,9 @@ jobs:
           sudo cmake --build . --target install
           sudo ldconfig
       - name: coverage
+        env:
+          AZDO_PAT: ${{ secrets.AZDO_PAT }}
+          AZDO_URL: ${{ secrets.AZDO_URL }}
         run: |
           make cover
     #  - name: Send coverage to coverall
