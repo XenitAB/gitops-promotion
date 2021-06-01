@@ -107,11 +107,13 @@ func testPushAndMerge(t *testing.T, repo *Repository, branchName string) {
 		Sha:   "",
 	}
 
-	err = repo.CreatePR(ctx, branchName, true, state)
+	err = repo.CreatePR(ctx, branchName, true, &state)
 	require.NoError(t, err)
 }
 
 func testRemoveTemporaryTestFiles(t *testing.T, path string) {
+	t.Helper()
+
 	contents, err := filepath.Glob(path)
 	if err != nil {
 		return

@@ -7,8 +7,10 @@ ifneq (,$(wildcard $(TEST_ENV_FILE)))
     export
 endif
 
+.SILENT: lint
+.PHONY: lint
 lint:
-	golangci-lint run -E misspell ./...
+	golangci-lint run ./...
 
 fmt:
 	go fmt ./...

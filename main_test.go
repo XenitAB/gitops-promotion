@@ -22,5 +22,4 @@ func TestCIRequirements(t *testing.T) {
 			t.Errorf("%s environment variable is required by CI.", envVar)
 		}
 	}
-
 }

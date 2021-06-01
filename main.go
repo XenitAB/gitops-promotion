@@ -11,6 +11,15 @@ import (
 )
 
 func main() {
+	err := Run(os.Args)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	os.Exit(0)
+}
+
+func Run(args []string) error {
 	newCommand := flag.NewFlagSet("new", flag.ExitOnError)
 	newToken := newCommand.String("token", "", "stage the pipeline is currently in")
 	newGroup := newCommand.String("group", "", "stage the pipeline is currently in")
@@ -23,55 +32,51 @@ func main() {
 	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
 	statusToken := statusCommand.String("token", "", "stage the pipeline is currently in")
 
-	if len(os.Args) < 2 {
-		fmt.Println("new, promote, status or template subcommand is required")
-		os.Exit(1)
-		return
+	if len(args) < 2 {
+		return fmt.Errorf("new, promote or status subcommand is required")
 	}
 
 	path, err := setupFilesystem()
 	if err != nil {
-		fmt.Printf("ERROR: %v\n", err)
-		os.Exit(1)
-		return
+		return err
 	}
-	defer os.Remove(path)
+	defer func() { _ = os.Remove(path) }()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var commandErr error
 	var message string
-	switch os.Args[1] {
+	switch args[1] {
 	case "new":
-		err := newCommand.Parse(os.Args[2:])
+		err := newCommand.Parse(args[2:])
 		if err != nil {
-			panic(err)
+			return err
 		}
 		message, commandErr = command.NewCommand(ctx, path, *newToken, *newGroup, *newApp, *newTag)
 	case "promote":
-		err := promoteCommand.Parse(os.Args[2:])
+		err := promoteCommand.Parse(args[2:])
 		if err != nil {
-			panic(err)
+			return err
 		}
 		message, commandErr = command.PromoteCommand(ctx, path, *promoteToken)
 	case "status":
-		err := statusCommand.Parse(os.Args[2:])
+		err := statusCommand.Parse(args[2:])
 		if err != nil {
-			panic(err)
+			return err
 		}
 		message, commandErr = command.StatusCommand(ctx, path, *statusToken)
 	default:
 		flag.PrintDefaults()
-		os.Exit(1)
-		return
+		return fmt.Errorf("Unknown flag: %s", args[1])
 	}
+
 	if commandErr != nil {
-		fmt.Printf("ERROR: %v\n", commandErr)
-		os.Exit(1)
-		return
+		return commandErr
 	}
 
 	fmt.Println(message)
+
+	return nil
 }
 
 func setupFilesystem() (string, error) {

@@ -17,7 +17,7 @@ import (
 func getConfig(path string) (config.Config, error) {
 	cfg, err := config.LoadConfig(path)
 	if err != nil {
-		return config.Config{}, fmt.Errorf("could not load config: %v", err)
+		return config.Config{}, fmt.Errorf("could not load config: %w", err)
 	}
 	return cfg, nil
 }
@@ -25,7 +25,7 @@ func getConfig(path string) (config.Config, error) {
 func getRepository(ctx context.Context, path, token string) (*git.Repository, error) {
 	repo, err := git.LoadRepository(ctx, path, git.ProviderTypeAzdo, token)
 	if err != nil {
-		return nil, fmt.Errorf("could not load repository: %v", err)
+		return nil, fmt.Errorf("could not load repository: %w", err)
 	}
 	return repo, nil
 }
@@ -46,26 +46,27 @@ func NewCommand(ctx context.Context, path, token, group, app, tag string) (strin
 		Tag:   tag,
 		Sha:   "",
 	}
-	return promote(ctx, cfg, repo, state)
+	return promote(ctx, cfg, repo, &state)
 }
 
 func PromoteCommand(ctx context.Context, path, token string) (string, error) {
 	cfg, err := getConfig(path)
 	if err != nil {
-		return "", fmt.Errorf("could not get configuration: %v", err)
+		return "", fmt.Errorf("could not get configuration: %w", err)
 	}
 	repo, err := getRepository(ctx, path, token)
 	if err != nil {
-		return "", fmt.Errorf("could not get repository: %v", err)
+		return "", fmt.Errorf("could not get repository: %w", err)
 	}
 	pr, err := repo.GetPRThatCausedCurrentCommit(ctx)
 	if err != nil {
+		//lint:ignore nilerr should not return error
 		return "skipping PR creation as commit does not originate from promotion PR", nil
 	}
-	return promote(ctx, cfg, repo, pr.State)
+	return promote(ctx, cfg, repo, &pr.State)
 }
 
-func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state git.PRState) (string, error) {
+func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state *git.PRState) (string, error) {
 	// Check if there is a next env or get next env
 	if state.Env == "" {
 		state.Env = cfg.Environments[0].Name
@@ -75,7 +76,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 		}
 		nextEnv, err := cfg.NextEnvironment(state.Env)
 		if err != nil {
-			return "", fmt.Errorf("could not get next environment: %v", err)
+			return "", fmt.Errorf("could not get next environment: %w", err)
 		}
 		state.Env = nextEnv.Name
 	}
@@ -83,7 +84,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	// Set sha to be included in the next PR
 	headID, err := repo.GetCurrentCommit()
 	if err != nil {
-		return "", fmt.Errorf("could not get latest commit: %v", err)
+		return "", fmt.Errorf("could not get latest commit: %w", err)
 	}
 	state.Sha = headID.String()
 
@@ -91,29 +92,29 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	manifestPath := fmt.Sprintf("%s/%s/%s", repo.GetRootDir(), state.Group, state.Env)
 	err = updateImageTag(manifestPath, state.App, state.Group, state.Tag)
 	if err != nil {
-		return "", fmt.Errorf("failed updating manifests: %v", err)
+		return "", fmt.Errorf("failed updating manifests: %w", err)
 	}
 
 	// Push and create PR
 	err = repo.CreateBranch(state.BranchName(), true)
 	if err != nil {
-		return "", fmt.Errorf("could not create branch: %v", err)
+		return "", fmt.Errorf("could not create branch: %w", err)
 	}
 	_, err = repo.CreateCommit(state.BranchName(), state.Title())
 	if err != nil {
-		return "", fmt.Errorf("could not commit changes: %v", err)
+		return "", fmt.Errorf("could not commit changes: %w", err)
 	}
 	err = repo.Push(state.BranchName())
 	if err != nil {
-		return "", fmt.Errorf("could not push changes: %v", err)
+		return "", fmt.Errorf("could not push changes: %w", err)
 	}
 	auto, err := cfg.IsEnvironmentAutomated(state.Env)
 	if err != nil {
-		return "", fmt.Errorf("could not get environment automation state: %v", err)
+		return "", fmt.Errorf("could not get environment automation state: %w", err)
 	}
 	err = repo.CreatePR(ctx, state.BranchName(), auto, state)
 	if err != nil {
-		return "", fmt.Errorf("could not create a PR: %v", err)
+		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
 	return "created promotions pull request", nil
 }
@@ -140,7 +141,7 @@ func StatusCommand(ctx context.Context, path, token string) (string, error) {
 	// get current pr
 	pr, err := repo.GetPRForCurrentBranch(ctx)
 	if err != nil {
-		return "", fmt.Errorf("failed getting pr for current branch: %v", err)
+		return "", fmt.Errorf("failed getting pr for current branch: %w", err)
 	}
 
 	// Skip the status check if this is the first environment
@@ -189,7 +190,7 @@ func updateImageTag(path, app, group, tag string) error {
 
 	_, err := update.UpdateWithSetters(path, path, policies)
 	if err != nil {
-		return fmt.Errorf("failed updating manifests: %v", err)
+		return fmt.Errorf("failed updating manifests: %w", err)
 	}
 
 	return nil

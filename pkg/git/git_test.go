@@ -149,10 +149,9 @@ func testGetEnvOrSkip(t *testing.T, key string) string {
 func testCloneRepository(t *testing.T, url, username, password, path string) {
 	t.Helper()
 
-	auth, err := testBasicAuthMethod(username, password)
-	require.NoError(t, err)
+	auth := testBasicAuthMethod(username, password)
 
-	_, err = git2go.Clone(url, path, &git2go.CloneOptions{
+	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
 		FetchOptions: &git2go.FetchOptions{
 			DownloadTags: git2go.DownloadTagsNone,
 			RemoteCallbacks: git2go.RemoteCallbacks{
@@ -164,7 +163,7 @@ func testCloneRepository(t *testing.T, url, username, password, path string) {
 	require.NoError(t, err)
 }
 
-func testBasicAuthMethod(username, password string) (*scgit.Auth, error) {
+func testBasicAuthMethod(username, password string) *scgit.Auth {
 	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
 		cred, err := git2go.NewCredUserpassPlaintext(username, password)
 		if err != nil {
@@ -173,5 +172,5 @@ func testBasicAuthMethod(username, password string) (*scgit.Auth, error) {
 		return cred, nil
 	}
 
-	return &scgit.Auth{CredCallback: credCallback}, nil
+	return &scgit.Auth{CredCallback: credCallback}
 }

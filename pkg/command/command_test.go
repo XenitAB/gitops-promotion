@@ -100,7 +100,7 @@ why: true
 		defer os.RemoveAll(dir)
 
 		testFile := fmt.Sprintf("%s/%s.yaml", dir, c.state.App)
-		err = os.WriteFile(testFile, []byte(c.before), 0666)
+		err = os.WriteFile(testFile, []byte(c.before), 0600)
 		if err != nil && c.expectedErrContains == "" {
 			t.Errorf("Expected err to be nil: %q", err)
 		}
@@ -126,6 +126,5 @@ why: true
 				t.Errorf("\nExpected:\n%s\n\nReceived:\n%s\n", c.after, string(result))
 			}
 		}
-
 	}
 }
