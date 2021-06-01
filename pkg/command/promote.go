@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/fluxcd/image-automation-controller/pkg/update"
+	imagev1alpha1_reflect "github.com/fluxcd/image-reflector-controller/api/v1alpha1"
 	"github.com/xenitab/gitops-promotion/pkg/config"
 	"github.com/xenitab/gitops-promotion/pkg/git"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func PromoteCommand(ctx context.Context, path, token string) (string, error) {
@@ -76,4 +79,25 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
 	return "created promotions pull request", nil
+}
+
+func updateImageTag(path, app, group, tag string) error {
+	policies := []imagev1alpha1_reflect.ImagePolicy{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      app,
+				Namespace: group,
+			},
+			Status: imagev1alpha1_reflect.ImagePolicyStatus{
+				LatestImage: fmt.Sprintf("%s:%s", app, tag),
+			},
+		},
+	}
+
+	_, err := update.UpdateWithSetters(path, path, policies)
+	if err != nil {
+		return fmt.Errorf("failed updating manifests: %w", err)
+	}
+
+	return nil
 }

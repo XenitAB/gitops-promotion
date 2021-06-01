@@ -2,11 +2,8 @@ package git
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
-	scgit "github.com/fluxcd/source-controller/pkg/git"
-	git2go "github.com/libgit2/git2go/v31"
 	"github.com/stretchr/testify/require"
 )
 
@@ -135,42 +132,42 @@ func toIntPtr(i int) *int {
 	return &i
 }
 
-func testGetEnvOrSkip(t *testing.T, key string) string {
-	t.Helper()
+// func testGetEnvOrSkip(t *testing.T, key string) string {
+// 	t.Helper()
 
-	value := os.Getenv(key)
-	if value == "" {
-		t.Skipf("Skipping test since environment variable %q is not set", key)
-	}
+// 	value := os.Getenv(key)
+// 	if value == "" {
+// 		t.Skipf("Skipping test since environment variable %q is not set", key)
+// 	}
 
-	return value
-}
+// 	return value
+// }
 
-func testCloneRepository(t *testing.T, url, username, password, path string) {
-	t.Helper()
+// func testCloneRepository(t *testing.T, url, username, password, path string) {
+// 	t.Helper()
 
-	auth := testBasicAuthMethod(username, password)
+// 	auth := testBasicAuthMethod(username, password)
 
-	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
-		FetchOptions: &git2go.FetchOptions{
-			DownloadTags: git2go.DownloadTagsNone,
-			RemoteCallbacks: git2go.RemoteCallbacks{
-				CredentialsCallback: auth.CredCallback,
-			},
-		},
-		CheckoutBranch: DefaultBranch,
-	})
-	require.NoError(t, err)
-}
+// 	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
+// 		FetchOptions: &git2go.FetchOptions{
+// 			DownloadTags: git2go.DownloadTagsNone,
+// 			RemoteCallbacks: git2go.RemoteCallbacks{
+// 				CredentialsCallback: auth.CredCallback,
+// 			},
+// 		},
+// 		CheckoutBranch: DefaultBranch,
+// 	})
+// 	require.NoError(t, err)
+// }
 
-func testBasicAuthMethod(username, password string) *scgit.Auth {
-	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
-		cred, err := git2go.NewCredUserpassPlaintext(username, password)
-		if err != nil {
-			return nil, err
-		}
-		return cred, nil
-	}
+// func testBasicAuthMethod(username, password string) *scgit.Auth {
+// 	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
+// 		cred, err := git2go.NewCredUserpassPlaintext(username, password)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		return cred, nil
+// 	}
 
-	return &scgit.Auth{CredCallback: credCallback}
-}
+// 	return &scgit.Auth{CredCallback: credCallback}
+// }
