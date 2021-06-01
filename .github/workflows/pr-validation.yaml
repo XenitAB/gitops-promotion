@@ -144,11 +144,11 @@ jobs:
           AZDO_URL: ${{ secrets.AZDO_URL }}
         run: |
           make cover
-    #  - name: Send coverage to coverall
-    #    uses: shogo82148/actions-goveralls@v1
-    #    with:
-    #      path-to-profile: tmp/coverage.out
-    #      ignore: cmd/azad-kube-proxy/main.go,pkg/proxy/proxy.go
+     - name: Send coverage to coverall
+       uses: shogo82148/actions-goveralls@v1
+       with:
+         path-to-profile: tmp/coverage.out
+         ignore: main.go
 
   build-container:
     runs-on: ubuntu-latest
