@@ -100,9 +100,9 @@ func testPushAndMerge(t *testing.T, repo *Repository, branchName string) {
 
 	state := PRState{
 		Env:   "",
-		Group: "TESTING",
-		App:   "TESTING",
-		Tag:   "TESTING",
+		Group: "GROUP_TESTING",
+		App:   "APP_TESTING",
+		Tag:   "TAG_TESTING",
 		Sha:   "",
 	}
 

@@ -3,12 +3,14 @@ package git
 import (
 	"context"
 	"fmt"
+	"strings"
 )
 
 type ProviderType string
 
 const (
-	ProviderTypeAzdo ProviderType = "azdo"
+	ProviderTypeUnknown ProviderType = "unknown"
+	ProviderTypeAzdo    ProviderType = "azdo"
 )
 
 type GitProvider interface {
@@ -25,5 +27,14 @@ func NewGitProvider(ctx context.Context, providerType ProviderType, remoteURL, t
 		return NewAzdoGITProvider(ctx, remoteURL, token)
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
+	}
+}
+
+func StringToProviderType(p string) ProviderType {
+	switch strings.ToLower(p) {
+	case "azdo":
+		return ProviderTypeAzdo
+	default:
+		return ProviderTypeUnknown
 	}
 }
