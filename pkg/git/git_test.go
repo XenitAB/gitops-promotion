@@ -39,6 +39,15 @@ func TestPRState(t *testing.T) {
 		require.Contains(t, description, c.state.App)
 		require.Contains(t, description, c.state.Tag)
 		require.Contains(t, description, c.state.Sha)
+
+		parsedState, err := parsePrState(description)
+		require.NoError(t, err)
+
+		require.Equal(t, c.state.Env, parsedState.Env)
+		require.Equal(t, c.state.Group, parsedState.Group)
+		require.Equal(t, c.state.App, parsedState.App)
+		require.Equal(t, c.state.Tag, parsedState.Tag)
+		require.Equal(t, c.state.Sha, parsedState.Sha)
 	}
 }
 
