@@ -28,7 +28,7 @@ func TestNewGitProvider(t *testing.T) {
 			expectedProviderType: ProviderTypeUnknown,
 			remoteURL:            "",
 			token:                "",
-			expectedError:        "unknown provider type: unknown",
+			expectedError:        "unknown provider type",
 		},
 	}
 
