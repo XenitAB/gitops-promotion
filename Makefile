@@ -29,7 +29,7 @@ test: fmt vet
 
 cover:
 	mkdir -p tmp
-	go test -timeout 1m ./... -coverprofile=tmp/coverage.out
+	go test -timeout 1m -coverpkg=./... -coverprofile=tmp/coverage.out ./...
 	go tool cover -html=tmp/coverage.out
 
 docker-build:
