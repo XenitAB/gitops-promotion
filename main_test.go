@@ -17,16 +17,10 @@ func TestCIRequirements(t *testing.T) {
 	}
 
 	for _, envVar := range reqEnvVars {
-		getEnvOrError(t, envVar)
+		v := os.Getenv(envVar)
+		if v == "" {
+			t.Errorf("%s environment variable is required by CI.", envVar)
+		}
 	}
 
-}
-
-func getEnvOrError(t *testing.T, envVar string) string {
-	v := os.Getenv(envVar)
-	if v == "" {
-		t.Errorf("%s environment variable is required by CI.", envVar)
-	}
-
-	return v
 }

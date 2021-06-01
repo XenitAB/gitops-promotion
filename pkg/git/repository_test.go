@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -135,7 +136,7 @@ func testCleanupAzdoRepository(t *testing.T, url string, password string, timest
 		root := repo.GetRootDir()
 		testFileName = fmt.Sprintf("%s/test_%s.txt", root, timestamp)
 
-		if _, err := os.Stat(testFileName); !os.IsNotExist(err) {
+		if _, err := os.Stat(testFileName); !errors.Is(err, os.ErrNotExist) {
 			ok = true
 			break
 		}
