@@ -2,7 +2,6 @@ package git
 
 import (
 	"context"
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -32,24 +31,6 @@ func TestNewGitProvider(t *testing.T) {
 		},
 	}
 
-	azdoPAT, azdoURL, testAzdo := testNewGitProviderAzdo(t)
-	if testAzdo {
-		azdoCase := struct {
-			providerString       string
-			expectedProviderType ProviderType
-			remoteURL            string
-			token                string
-			expectedError        string
-		}{
-			providerString:       "azdo",
-			expectedProviderType: ProviderTypeAzdo,
-			remoteURL:            azdoURL,
-			token:                azdoPAT,
-			expectedError:        "",
-		}
-		cases = append(cases, azdoCase)
-	}
-
 	for _, c := range cases {
 		ctx := context.Background()
 
@@ -61,17 +42,4 @@ func TestNewGitProvider(t *testing.T) {
 			require.EqualError(t, err, c.expectedError)
 		}
 	}
-}
-
-func testNewGitProviderAzdo(t *testing.T) (string, string, bool) {
-	t.Helper()
-
-	azdoPAT := os.Getenv("AZDO_PAT")
-	azdoURL := os.Getenv("AZDO_URL")
-
-	if azdoPAT != "" && azdoURL != "" {
-		return azdoPAT, azdoURL, true
-	}
-
-	return "", "", false
 }

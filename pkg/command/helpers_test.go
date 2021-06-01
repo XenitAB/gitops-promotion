@@ -28,6 +28,8 @@ func testGetEnvOrSkip(t *testing.T, key string) string {
 }
 
 func testCloneRepositoryAndValidateTag(t *testing.T, url, username, password, branchName, group, env, app, tag string) string {
+	t.Helper()
+
 	manifestPath := fmt.Sprintf("%s/%s/%s.yaml", group, env, app)
 	for i := 1; i < 5; i++ {
 		path := t.TempDir()
