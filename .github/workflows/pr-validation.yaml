@@ -108,16 +108,16 @@ jobs:
           export PATH=${PATH}:~/.local/bin
           make gosec
 
-  # semgrep:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v1
-  #     - uses: returntocorp/semgrep-action@v1
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #       with:
-  #         publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
-  #         publishDeployment: 284
+  semgrep:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: returntocorp/semgrep-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+          publishDeployment: 284
 
   coverage:
     runs-on: ubuntu-latest
