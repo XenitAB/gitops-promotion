@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	err := Run(os.Args)
+	err := run(os.Args)
 	if err != nil {
 		os.Exit(1)
 	}
@@ -19,7 +19,7 @@ func main() {
 	os.Exit(0)
 }
 
-func Run(args []string) error {
+func run(args []string) error {
 	newCommand := flag.NewFlagSet("new", flag.ExitOnError)
 	newToken := newCommand.String("token", "", "stage the pipeline is currently in")
 	newGroup := newCommand.String("group", "", "stage the pipeline is currently in")
