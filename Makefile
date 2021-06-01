@@ -12,9 +12,13 @@ endif
 lint:
 	golangci-lint run ./...
 
+.SILENT: fmt
+.PHONY: fmt
 fmt:
 	go fmt ./...
 
+.SILENT: vet
+.PHONY: vet
 vet:
 	go vet ./...
 
@@ -22,9 +26,6 @@ vet:
 .PHONY: test
 test: fmt vet
 	go test -timeout 1m ./... -cover
-
-gosec:
-	gosec ./...
 
 cover:
 	mkdir -p tmp

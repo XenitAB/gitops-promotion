@@ -78,36 +78,6 @@ jobs:
         run: |
           make test
 
-  gosec:
-    runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v2.3.4
-      - name: Setup go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "1.16"
-      - name: Setup gosec
-        env:
-          GOSEC_VERSION: "2.6.1"
-          GOSEC_SHA: "80950b35d13a0f68b75878da030ee305def6170f6db01d1f8021ee198eb84b25"
-        run: |
-          curl -Lo ./gosec.tar.gz https://github.com/securego/gosec/releases/download/v${GOSEC_VERSION}/gosec_${GOSEC_VERSION}_linux_amd64.tar.gz
-          DOWNLOAD_GOSEC_SHA=$(openssl sha1 -sha256 gosec.tar.gz | awk '{print $2}')
-          if [[ "${GOSEC_SHA}" != "${DOWNLOAD_GOSEC_SHA}" ]]; then
-              echo "Downloaded checksum (${DOWNLOAD_GOSEC_SHA}) for terraform-docs does not match expected value: ${GOSEC_SHA}"
-              exit 1
-          fi
-          tar xzvf ./gosec.tar.gz
-          mkdir -p ~/.local/bin/
-          mv ./gosec ~/.local/bin/gosec
-      - name: Run gosec
-        run: |
-          export PATH=${PATH}:~/.local/bin
-          make gosec
-
   semgrep:
     runs-on: ubuntu-latest
     steps:
