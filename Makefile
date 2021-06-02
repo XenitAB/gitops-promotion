@@ -25,11 +25,11 @@ vet:
 .SILENT: test
 .PHONY: test
 test: fmt vet
-	go test -timeout 1m ./... -cover
+	go test -timeout 2m ./... -cover
 
 cover:
 	mkdir -p tmp
-	go test -timeout 1m -coverpkg=./... -coverprofile=tmp/coverage.out ./...
+	go test -timeout 2m -coverpkg=./... -coverprofile=tmp/coverage.out ./...
 	go tool cover -html=tmp/coverage.out
 
 docker-build:

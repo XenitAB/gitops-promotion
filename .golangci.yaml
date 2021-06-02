@@ -189,3 +189,4 @@ issues:
         - gocyclo
         - funlen
         - gocognit
+        - unparam

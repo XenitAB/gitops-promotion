@@ -25,6 +25,7 @@ func TestE2EAzureDevOps(t *testing.T) {
 
 	ctx := context.Background()
 
+	// Test DEV
 	newCommandMsgDev, err := NewCommand(ctx, path, password, group, app, tag)
 	require.NoError(t, err)
 
@@ -32,11 +33,12 @@ func TestE2EAzureDevOps(t *testing.T) {
 
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "dev", app, tag)
 
-	repo := testGetRepository(t, path)
-	rev := testGetRevision(t, repo)
+	repoDev := testGetRepository(t, path)
+	revDev := testGetRevision(t, repoDev)
 
-	testSetAzureDevOpsStatus(t, rev, group, "dev", url, password, true)
+	testSetAzureDevOpsStatus(t, revDev, group, "dev", url, password, true)
 
+	// Test QA
 	promoteCommandMsgQa, err := PromoteCommand(ctx, path, password)
 	require.NoError(t, err)
 
@@ -48,4 +50,40 @@ func TestE2EAzureDevOps(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "status check has succeed", statusCommandMsgQa)
+
+	repoQa := testGetRepository(t, path)
+	revQa := testGetRevision(t, repoQa)
+
+	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revQa)
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "qa", app, tag)
+
+	repoMergedQa := testGetRepository(t, path)
+	revMergedQa := testGetRevision(t, repoMergedQa)
+
+	testSetAzureDevOpsStatus(t, revMergedQa, group, "qa", url, password, true)
+
+	// Test PROD
+	promoteCommandMsgProd, err := PromoteCommand(ctx, path, password)
+	require.NoError(t, err)
+
+	require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "prod", app, tag)
+	statusCommandMsgProd, err := StatusCommand(ctx, path, password)
+	require.NoError(t, err)
+
+	require.Equal(t, "status check has succeed", statusCommandMsgProd)
+
+	repoProd := testGetRepository(t, path)
+	revProd := testGetRevision(t, repoProd)
+
+	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revProd)
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "prod", app, tag)
+
+	repoMergedProd := testGetRepository(t, path)
+	revMergedProd := testGetRevision(t, repoMergedProd)
+
+	testSetAzureDevOpsStatus(t, revMergedProd, group, "prod", url, password, true)
 }

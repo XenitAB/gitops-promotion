@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -14,6 +15,7 @@ import (
 	azdogit "github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"github.com/stretchr/testify/require"
 	giturls "github.com/whilp/git-urls"
+	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
 func testGetEnvOrSkip(t *testing.T, key string) string {
@@ -31,7 +33,7 @@ func testCloneRepositoryAndValidateTag(t *testing.T, url, username, password, br
 	t.Helper()
 
 	manifestPath := fmt.Sprintf("%s/%s/%s.yaml", group, env, app)
-	for i := 1; i < 5; i++ {
+	for i := 1; i < 10; i++ {
 		path := t.TempDir()
 		testCloneRepository(t, url, username, password, path, branchName)
 		fileName := fmt.Sprintf("%s/%s", path, manifestPath)
@@ -43,11 +45,29 @@ func testCloneRepositoryAndValidateTag(t *testing.T, url, username, password, br
 			return path
 		}
 
-		time.Sleep(100 * time.Millisecond)
+		testSleepBackoff(t, i)
 	}
 
 	t.Fatalf("Was not able to pull the latest commit where %q contained tag: %s", manifestPath, tag)
 	return ""
+}
+
+func testSleepBackoff(t *testing.T, i int) {
+	t.Helper()
+
+	backoff := i * 200
+
+	jitter := func(millis int) int {
+		if millis == 0 {
+			return 0
+		}
+
+		return millis/2 + rand.Intn(millis) // #nosec
+	}
+
+	timeSleep := time.Duration(jitter(backoff)) * time.Millisecond
+
+	time.Sleep(timeSleep)
 }
 
 func testCloneRepository(t *testing.T, url, username, password, path, branchName string) {
@@ -107,7 +127,7 @@ func testSetAzureDevOpsStatus(t *testing.T, revision, group, env, url, token str
 	genre := "fluxcd"
 	description := fmt.Sprintf("testing-%s-%s-%s", group, env, revision)
 	name := fmt.Sprintf("kind/%s-%s", group, env)
-	orgURL, project, repository := testGetAzdoStrings(t, url)
+	orgURL, project, repository := testGetAzureDevOpsStrings(t, url)
 	azdoClient := testGetAzureDevopsClient(t, orgURL, token)
 
 	state := &azdogit.GitStatusStateValues.Succeeded
@@ -136,7 +156,20 @@ func testSetAzureDevOpsStatus(t *testing.T, revision, group, env, url, token str
 	require.NoError(t, err)
 }
 
-func testGetAzdoStrings(t *testing.T, s string) (string, string, string) {
+func testMergeAzureDevOpsPR(t *testing.T, ctx context.Context, url, token, branch, revision string) {
+	t.Helper()
+
+	provider, err := git.NewAzdoGITProvider(ctx, url, token)
+	require.NoError(t, err)
+
+	pr, err := provider.GetPRWithBranch(ctx, branch, "main")
+	require.NoError(t, err)
+
+	err = provider.MergePR(ctx, pr.ID, revision)
+	require.NoError(t, err)
+}
+
+func testGetAzureDevOpsStrings(t *testing.T, s string) (string, string, string) {
 	t.Helper()
 
 	u, err := giturls.Parse(s)
