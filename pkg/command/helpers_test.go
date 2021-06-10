@@ -100,7 +100,7 @@ func testGetRepository(t *testing.T, path string) *git2go.Repository {
 	return localRepo
 }
 
-func testGetRevision(t *testing.T, repo *git2go.Repository) string {
+func testGetRepositoryHeadRevision(t *testing.T, repo *git2go.Repository) string {
 	t.Helper()
 
 	head, err := repo.Head()

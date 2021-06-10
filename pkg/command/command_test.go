@@ -34,7 +34,7 @@ func TestE2EAzureDevOps(t *testing.T) {
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "dev", app, tag)
 
 	repoDev := testGetRepository(t, path)
-	revDev := testGetRevision(t, repoDev)
+	revDev := testGetRepositoryHeadRevision(t, repoDev)
 
 	testSetAzureDevOpsStatus(t, revDev, group, "dev", url, password, true)
 
@@ -52,14 +52,14 @@ func TestE2EAzureDevOps(t *testing.T) {
 	require.Equal(t, "status check has succeed", statusCommandMsgQa)
 
 	repoQa := testGetRepository(t, path)
-	revQa := testGetRevision(t, repoQa)
+	revQa := testGetRepositoryHeadRevision(t, repoQa)
 
 	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revQa)
 
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "qa", app, tag)
 
 	repoMergedQa := testGetRepository(t, path)
-	revMergedQa := testGetRevision(t, repoMergedQa)
+	revMergedQa := testGetRepositoryHeadRevision(t, repoMergedQa)
 
 	testSetAzureDevOpsStatus(t, revMergedQa, group, "qa", url, password, true)
 
@@ -76,14 +76,14 @@ func TestE2EAzureDevOps(t *testing.T) {
 	require.Equal(t, "status check has succeed", statusCommandMsgProd)
 
 	repoProd := testGetRepository(t, path)
-	revProd := testGetRevision(t, repoProd)
+	revProd := testGetRepositoryHeadRevision(t, repoProd)
 
 	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revProd)
 
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "prod", app, tag)
 
 	repoMergedProd := testGetRepository(t, path)
-	revMergedProd := testGetRevision(t, repoMergedProd)
+	revMergedProd := testGetRepositoryHeadRevision(t, repoMergedProd)
 
 	testSetAzureDevOpsStatus(t, revMergedProd, group, "prod", url, password, true)
 }
