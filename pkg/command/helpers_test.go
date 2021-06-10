@@ -118,7 +118,7 @@ func testSetAzureDevOpsStatus(t *testing.T, revision, group, env, url, token str
 	description := fmt.Sprintf("testing-%s-%s-%s", group, env, revision)
 	name := fmt.Sprintf("kind/%s-%s", group, env)
 	orgURL, project, repository := testGetAzureDevOpsStrings(t, url)
-	azdoClient := testGetAzureDevopsClient(t, orgURL, token)
+	azdoClient := testGetAzureDevOpsClient(t, orgURL, token)
 
 	state := &azdogit.GitStatusStateValues.Succeeded
 	if !succeeded {
@@ -188,7 +188,7 @@ func testGetAzureDevOpsStrings(t *testing.T, s string) (string, string, string) 
 	return orgURL, project, repository
 }
 
-func testGetAzureDevopsClient(t *testing.T, orgURL, token string) *azdogit.ClientImpl {
+func testGetAzureDevOpsClient(t *testing.T, orgURL, token string) *azdogit.ClientImpl {
 	t.Helper()
 
 	connection := azdo.NewPatConnection(orgURL, token)
