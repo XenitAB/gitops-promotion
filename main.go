@@ -13,6 +13,7 @@ import (
 func main() {
 	err := run(os.Args)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Application failed with error: %v\n", err)
 		os.Exit(1)
 	}
 
