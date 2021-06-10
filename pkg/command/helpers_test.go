@@ -56,17 +56,7 @@ func testSleepBackoff(t *testing.T, i int) {
 	t.Helper()
 
 	backoff := i * 200
-
-	jitter := func(millis int) int {
-		if millis == 0 {
-			return 0
-		}
-
-		return millis/2 + rand.Intn(millis) // #nosec
-	}
-
-	timeSleep := time.Duration(jitter(backoff)) * time.Millisecond
-
+	timeSleep := time.Duration(backoff/2+rand.Intn(backoff)) * time.Millisecond
 	time.Sleep(timeSleep)
 }
 
