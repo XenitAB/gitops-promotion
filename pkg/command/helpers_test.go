@@ -56,7 +56,10 @@ func testSleepBackoff(t *testing.T, i int) {
 	t.Helper()
 
 	backoff := i * 200
+
+	// #nosec
 	timeSleep := time.Duration(backoff/2+rand.Intn(backoff)) * time.Millisecond
+
 	time.Sleep(timeSleep)
 }
 
