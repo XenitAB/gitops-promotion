@@ -16,8 +16,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Application failed with error: %v\n", err)
 		os.Exit(1)
 	}
-
-	os.Exit(0)
 }
 
 func run(args []string) error {
