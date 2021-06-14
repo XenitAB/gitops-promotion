@@ -52,32 +52,6 @@ jobs:
             exit 1
           fi
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@v2.3.4
-      - name: Setup go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "1.16"
-      - name: Install libgit2
-        run: |
-          cd /tmp
-          git clone https://github.com/libgit2/libgit2.git
-          cd libgit2
-          git checkout maint/v1.1
-          mkdir build && cd build
-          cmake ..
-          sudo cmake --build . --target install
-          sudo ldconfig
-      - name: Run test
-        env:
-          AZDO_PAT: ${{ secrets.AZDO_PAT }}
-          AZDO_URL: ${{ secrets.AZDO_URL }}
-        run: |
-          make test
-
   # semgrep:
   #   runs-on: ubuntu-latest
   #   steps:
@@ -155,7 +129,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.NAME }}:${{ steps.prep.outputs.VERSION }}
-          format: 'table'
-          exit-code: '1'
+          format: "table"
+          exit-code: "1"
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: "CRITICAL,HIGH"
