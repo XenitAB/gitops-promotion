@@ -9,8 +9,7 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeUnknown ProviderType = "unknown"
-	ProviderTypeAzdo    ProviderType = "azdo"
+	ProviderTypeAzdo ProviderType = "azdo"
 )
 
 type GitProvider interface {
@@ -25,18 +24,16 @@ func NewGitProvider(ctx context.Context, providerType ProviderType, remoteURL, t
 	switch providerType {
 	case ProviderTypeAzdo:
 		return NewAzdoGITProvider(ctx, remoteURL, token)
-	case ProviderTypeUnknown:
-		return nil, fmt.Errorf("unknown provider type")
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
 	}
 }
 
-func StringToProviderType(p string) ProviderType {
+func StringToProviderType(p string) (ProviderType, error) {
 	switch strings.ToLower(p) {
 	case "azdo":
-		return ProviderTypeAzdo
+		return ProviderTypeAzdo, nil
 	default:
-		return ProviderTypeUnknown
+		return "", fmt.Errorf("Unknown provider selected: %s", p)
 	}
 }

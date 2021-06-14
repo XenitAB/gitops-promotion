@@ -24,22 +24,27 @@ func TestNewGitProvider(t *testing.T) {
 		},
 		{
 			providerString:       "fake",
-			expectedProviderType: ProviderTypeUnknown,
+			expectedProviderType: "",
 			remoteURL:            "",
 			token:                "",
-			expectedError:        "unknown provider type",
+			expectedError:        "Unknown provider selected: fake",
 		},
 	}
 
 	for _, c := range cases {
 		ctx := context.Background()
 
-		providerType := StringToProviderType(c.providerString)
-		require.Equal(t, c.expectedProviderType, providerType)
-
-		_, err := NewGitProvider(ctx, providerType, c.remoteURL, c.token)
-		if c.expectedError != "" {
+		providerType, err := StringToProviderType(c.providerString)
+		if err != nil {
 			require.EqualError(t, err, c.expectedError)
+		}
+
+		if err == nil {
+			require.Equal(t, c.expectedProviderType, providerType)
+			_, err := NewGitProvider(ctx, providerType, c.remoteURL, c.token)
+			if c.expectedError != "" {
+				require.EqualError(t, err, c.expectedError)
+			}
 		}
 	}
 }
