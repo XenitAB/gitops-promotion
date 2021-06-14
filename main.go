@@ -39,7 +39,13 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	defer func() { _ = os.Remove(path) }()
+
+	defer func() {
+		err := os.Remove(path)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to remove path %q, returned error: %s", path, err)
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -75,7 +81,7 @@ func run(args []string) error {
 
 	fmt.Println(message)
 
-	return nil
+	return err
 }
 
 func setupFilesystem() (string, error) {
