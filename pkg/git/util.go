@@ -10,7 +10,7 @@ import (
 func parseGitAddress(s string) (string, string, error) {
 	u, err := giturls.Parse(s)
 	if err != nil {
-		return "", "", nil
+		return "", "", err
 	}
 
 	scheme := u.Scheme

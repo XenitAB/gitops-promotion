@@ -30,7 +30,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v2.5.2
         with:
-          version: "v1.35"
+          version: "v1.40.1"
 
   fmt:
     runs-on: ubuntu-latest
@@ -51,59 +51,6 @@ jobs:
             echo 'run make fmt and commit changes'
             exit 1
           fi
-
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@v2.3.4
-      - name: Setup go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "1.16"
-      - name: Install libgit2
-        run: |
-          cd /tmp
-          git clone https://github.com/libgit2/libgit2.git
-          cd libgit2
-          git checkout maint/v1.1
-          mkdir build && cd build
-          cmake ..
-          sudo cmake --build . --target install
-          sudo ldconfig
-      - name: Run test
-        run: |
-          make test
-
-  gosec:
-    runs-on: ubuntu-latest
-    env:
-      GO111MODULE: on
-    steps:
-      - name: Checkout Source
-        uses: actions/checkout@v2.3.4
-      - name: Setup go
-        uses: actions/setup-go@v2
-        with:
-          go-version: "1.16"
-      - name: Setup gosec
-        env:
-          GOSEC_VERSION: "2.6.1"
-          GOSEC_SHA: "80950b35d13a0f68b75878da030ee305def6170f6db01d1f8021ee198eb84b25"
-        run: |
-          curl -Lo ./gosec.tar.gz https://github.com/securego/gosec/releases/download/v${GOSEC_VERSION}/gosec_${GOSEC_VERSION}_linux_amd64.tar.gz
-          DOWNLOAD_GOSEC_SHA=$(openssl sha1 -sha256 gosec.tar.gz | awk '{print $2}')
-          if [[ "${GOSEC_SHA}" != "${DOWNLOAD_GOSEC_SHA}" ]]; then
-              echo "Downloaded checksum (${DOWNLOAD_GOSEC_SHA}) for terraform-docs does not match expected value: ${GOSEC_SHA}"
-              exit 1
-          fi
-          tar xzvf ./gosec.tar.gz
-          mkdir -p ~/.local/bin/
-          mv ./gosec ~/.local/bin/gosec
-      - name: Run gosec
-        run: |
-          export PATH=${PATH}:~/.local/bin
-          make gosec
 
   # semgrep:
   #   runs-on: ubuntu-latest
@@ -136,13 +83,16 @@ jobs:
           sudo cmake --build . --target install
           sudo ldconfig
       - name: coverage
+        env:
+          AZDO_PAT: ${{ secrets.AZDO_PAT }}
+          AZDO_URL: ${{ secrets.AZDO_URL }}
         run: |
           make cover
-    #  - name: Send coverage to coverall
-    #    uses: shogo82148/actions-goveralls@v1
-    #    with:
-    #      path-to-profile: tmp/coverage.out
-    #      ignore: cmd/azad-kube-proxy/main.go,pkg/proxy/proxy.go
+      - name: Send coverage to coverall
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: tmp/coverage.out
+          ignore: main.go
 
   build-container:
     runs-on: ubuntu-latest
@@ -179,7 +129,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.NAME }}:${{ steps.prep.outputs.VERSION }}
-          format: 'table'
-          exit-code: '1'
+          format: "table"
+          exit-code: "1"
           ignore-unfixed: true
-          severity: 'CRITICAL,HIGH'
+          severity: "CRITICAL,HIGH"

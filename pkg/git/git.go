@@ -30,11 +30,11 @@ type PRState struct {
 	Sha   string `json:"sha"`
 }
 
-func (p PRState) Title() string {
+func (p *PRState) Title() string {
 	return fmt.Sprintf("Promote %s/%s in %s to %s", p.Group, p.App, p.Env, p.Tag)
 }
 
-func (p PRState) Description() (string, error) {
+func (p *PRState) Description() (string, error) {
 	jsonString, err := json.Marshal(p)
 	if err != nil {
 		return "", err
@@ -46,7 +46,7 @@ func (p PRState) Description() (string, error) {
 	return description, nil
 }
 
-func (p PRState) BranchName() string {
+func (p *PRState) BranchName() string {
 	return fmt.Sprintf("%s%s-%s", PromoteBranchPrefix, p.Group, p.App)
 }
 

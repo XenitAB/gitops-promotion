@@ -66,7 +66,7 @@ func NewAzdoGITProvider(ctx context.Context, remoteURL, token string) (*AzdoGITP
 }
 
 // CreatePR ...
-func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state PRState) error {
+func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) error {
 	sourceRefName := fmt.Sprintf("refs/heads/%s", branchName)
 	targetRefName := fmt.Sprintf("refs/heads/%s", DefaultBranch)
 	title := state.Title()
@@ -157,7 +157,8 @@ func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group strin
 	}
 	genre := "fluxcd"
 	name := fmt.Sprintf("%s-%s", group, env)
-	for _, s := range *statuses {
+	for i := range *statuses {
+		s := (*statuses)[i]
 		comp := strings.Split(*s.Context.Name, "/")
 		if len(comp) != 2 {
 			return Status{}, fmt.Errorf("status name in wrong format: %q", *s.Context.Name)
@@ -171,11 +172,11 @@ func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group strin
 	return Status{}, fmt.Errorf("no status found for sha %q", sha)
 }
 
-func (g *AzdoGITProvider) MergePR(ctx context.Context, ID int, sha string) error {
+func (g *AzdoGITProvider) MergePR(ctx context.Context, id int, sha string) error {
 	args := git.UpdatePullRequestArgs{
 		Project:       &g.proj,
 		RepositoryId:  &g.repo,
-		PullRequestId: &ID,
+		PullRequestId: &id,
 		GitPullRequestToUpdate: &git.GitPullRequest{
 			Status: &git.PullRequestStatusValues.Completed,
 			LastMergeSourceCommit: &git.GitCommitRef{

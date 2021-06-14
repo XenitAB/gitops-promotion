@@ -1,6 +1,52 @@
 package git
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/require"
+)
+
+func TestPRState(t *testing.T) {
+	cases := []struct {
+		state PRState
+	}{
+		{
+			state: PRState{
+				Env:   "ENV_TESTING",
+				Group: "GROUP_TESTING",
+				App:   "APP_TESTING",
+				Tag:   "TAG_TESTING",
+				Sha:   "SHA_TESTING",
+			},
+		},
+	}
+
+	for _, c := range cases {
+		title := c.state.Title()
+		branchName := c.state.BranchName()
+		description, err := c.state.Description()
+		require.NoError(t, err)
+		require.Contains(t, title, fmt.Sprintf("Promote %s", c.state.Group))
+		require.Contains(t, branchName, fmt.Sprintf("%s%s-%s", PromoteBranchPrefix, c.state.Group, c.state.App))
+		require.Contains(t, description, "<!-- metadata = ")
+		require.Contains(t, description, " -->")
+		require.Contains(t, description, c.state.Env)
+		require.Contains(t, description, c.state.Group)
+		require.Contains(t, description, c.state.App)
+		require.Contains(t, description, c.state.Tag)
+		require.Contains(t, description, c.state.Sha)
+
+		parsedState, err := parsePrState(description)
+		require.NoError(t, err)
+
+		require.Equal(t, c.state.Env, parsedState.Env)
+		require.Equal(t, c.state.Group, parsedState.Group)
+		require.Equal(t, c.state.App, parsedState.App)
+		require.Equal(t, c.state.Tag, parsedState.Tag)
+		require.Equal(t, c.state.Sha, parsedState.Sha)
+	}
+}
 
 func TestNewPR(t *testing.T) {
 	cases := []struct {

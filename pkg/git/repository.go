@@ -9,28 +9,28 @@ import (
 	git2go "github.com/libgit2/git2go/v31"
 )
 
-// Repository represents a local git repository
+// Repository represents a local git repository.
 type Repository struct {
 	gitRepository *git2go.Repository
 	gitProvider   GitProvider
 	token         string
 }
 
-// LoadRepository loads a local git repository
+// LoadRepository loads a local git repository.
 func LoadRepository(ctx context.Context, path string, providerType ProviderType, token string) (*Repository, error) {
 	localRepo, err := git2go.OpenRepository(path)
 	if err != nil {
-		return &Repository{}, fmt.Errorf("could not open repository: %v", err)
+		return &Repository{}, fmt.Errorf("could not open repository: %w", err)
 	}
 
 	remote, err := localRepo.Remotes.Lookup(DefaultRemote)
 	if err != nil {
-		return nil, fmt.Errorf("could not get remote: %v", err)
+		return nil, fmt.Errorf("could not get remote: %w", err)
 	}
 
 	provider, err := NewGitProvider(ctx, providerType, remote.Url(), token)
 	if err != nil {
-		return nil, fmt.Errorf("could not create git provider: %v", err)
+		return nil, fmt.Errorf("could not create git provider: %w", err)
 	}
 
 	return &Repository{
@@ -46,13 +46,13 @@ func (g *Repository) GetRootDir() string {
 	return rp
 }
 
-// CreateBranch creates a branch
+// CreateBranch creates a branch.
 func (g *Repository) CreateBranch(branchName string, force bool) error {
 	branch, err := g.gitRepository.LookupBranch(branchName, git2go.BranchLocal)
 	if err == nil {
 		err = branch.Delete()
 		if err != nil {
-			return fmt.Errorf("could not delete existing branch %q: %v", branchName, err)
+			return fmt.Errorf("could not delete existing branch %q: %w", branchName, err)
 		}
 	}
 
@@ -88,7 +88,7 @@ func (g *Repository) GetCurrentCommit() (*git2go.Oid, error) {
 	return head.Target(), nil
 }
 
-// CreateCommit creates a commit in the specfied branch
+// CreateCommit creates a commit in the specfied branch.
 func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, error) {
 	// TODO change to some bot name, probably break out in to config
 	signature := &git2go.Signature{
@@ -133,11 +133,11 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 	return sha, nil
 }
 
-// Push pushes the defined ref to remote
+// Push pushes the defined ref to remote.
 func (g *Repository) Push(branchName string) error {
 	remote, err := g.gitRepository.Remotes.Lookup(DefaultRemote)
 	if err != nil {
-		return fmt.Errorf("could not find remote %q: %v", DefaultRemote, err)
+		return fmt.Errorf("could not find remote %q: %w", DefaultRemote, err)
 	}
 
 	callback := git2go.RemoteCallbacks{
@@ -152,12 +152,12 @@ func (g *Repository) Push(branchName string) error {
 	branches := []string{fmt.Sprintf("+refs/heads/%s", branchName)}
 	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: callback})
 	if err != nil {
-		return fmt.Errorf("failed pushing branches %s: %v", branches, err)
+		return fmt.Errorf("failed pushing branches %s: %w", branches, err)
 	}
 	return nil
 }
 
-func (g *Repository) CreatePR(ctx context.Context, branchName string, auto bool, state PRState) error {
+func (g *Repository) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) error {
 	return g.gitProvider.CreatePR(ctx, branchName, auto, state)
 }
 
