@@ -9,6 +9,7 @@ import (
 
 func TestNewGitProvider(t *testing.T) {
 	cases := []struct {
+		testDescription      string
 		providerString       string
 		expectedProviderType ProviderType
 		remoteURL            string
@@ -16,6 +17,7 @@ func TestNewGitProvider(t *testing.T) {
 		expectedError        string
 	}{
 		{
+			testDescription:      "azdo provider returns error",
 			providerString:       "azdo",
 			expectedProviderType: ProviderTypeAzdo,
 			remoteURL:            "https://dev.azure.com/organization/project/_git/repository",
@@ -23,6 +25,15 @@ func TestNewGitProvider(t *testing.T) {
 			expectedError:        "TF400813: The user '' is not authorized to access this resource.",
 		},
 		{
+			testDescription:      "github provider returns error",
+			providerString:       "github",
+			expectedProviderType: ProviderTypeGitHub,
+			remoteURL:            "https://github.com/organization/repository",
+			token:                "fake",
+			expectedError:        "GET https://api.github.com/user/repos: 401 Bad credentials []",
+		},
+		{
+			testDescription:      "fake provider returns error",
 			providerString:       "fake",
 			expectedProviderType: "",
 			remoteURL:            "",
@@ -31,7 +42,9 @@ func TestNewGitProvider(t *testing.T) {
 		},
 	}
 
-	for _, c := range cases {
+	for i, c := range cases {
+		t.Logf("Test iteration %d: %s", i, c.testDescription)
+
 		ctx := context.Background()
 
 		providerType, err := StringToProviderType(c.providerString)

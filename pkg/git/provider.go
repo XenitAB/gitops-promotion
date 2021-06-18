@@ -9,7 +9,8 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeAzdo ProviderType = "azdo"
+	ProviderTypeAzdo   ProviderType = "azdo"
+	ProviderTypeGitHub ProviderType = "github"
 )
 
 type GitProvider interface {
@@ -24,6 +25,8 @@ func NewGitProvider(ctx context.Context, providerType ProviderType, remoteURL, t
 	switch providerType {
 	case ProviderTypeAzdo:
 		return NewAzdoGITProvider(ctx, remoteURL, token)
+	case ProviderTypeGitHub:
+		return NewGitHubGITProvider(ctx, remoteURL, token)
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
 	}
@@ -33,6 +36,8 @@ func StringToProviderType(p string) (ProviderType, error) {
 	switch strings.ToLower(p) {
 	case "azdo":
 		return ProviderTypeAzdo, nil
+	case "github":
+		return ProviderTypeGitHub, nil
 	default:
 		return "", fmt.Errorf("Unknown provider selected: %s", p)
 	}
