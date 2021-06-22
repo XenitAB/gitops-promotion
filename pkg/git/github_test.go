@@ -89,7 +89,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		Group: "testgroup",
 		App:   "testapp",
 		Tag:   now.Format("20060102150405"),
-		Sha:   "testsha",
+		Sha:   "",
 	}
 
 	JustBeforeEach(func() {
@@ -146,10 +146,16 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			e = repo.Push(branchName)
 			Expect(e).To(BeNil())
 
+			e = os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+
 			tmpDir, e = ioutil.TempDir("", "testing")
 			Expect(e).To(BeNil())
 
 			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
+			Expect(e).To(BeNil())
+
+			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
 			Expect(e).To(BeNil())
 
 			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
@@ -175,6 +181,97 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 
 		It("doesn't return an error", func() {
 			Expect(err).To(BeNil())
+		})
+	})
+})
+
+var _ = Describe("GitHubGITProvider GetStatus", func() {
+	ctx := context.Background()
+	remoteURL := os.Getenv("GITHUB_URL")
+	token := os.Getenv("GITHUB_TOKEN")
+	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+
+	BeforeEach(func() {
+		if remoteURL == "" || token == "" {
+			Skip("GITHUB_URL and/or GITHUB_TOKEN environment variables not set")
+		}
+
+		if providerErr != nil {
+			Fail("Provider initialization failed")
+		}
+	})
+
+	var err error
+	var status Status
+	var tmpDir string
+	now := time.Now()
+	state := &PRState{
+		Env:   "dev",
+		Group: "testgroup",
+		App:   "testapp",
+		Tag:   now.Format("20060102150405"),
+		Sha:   "",
+	}
+
+	JustBeforeEach(func() {
+		status, err = provider.GetStatus(ctx, state.Sha, state.Group, state.Env)
+	})
+
+	When("Getting status of empty sha", func() {
+		It("return error", func() {
+			gitHubError, ok := err.(*github.ErrorResponse)
+			Expect(ok).To(Equal(true))
+			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
+			Expect(bodyErr).To(BeNil())
+			bodyErr = gitHubError.Response.Body.Close()
+			Expect(bodyErr).To(BeNil())
+
+			Expect(string(body)).To(ContainSubstring("\"message\":\"Not Found\""))
+			Expect(status.Succeeded).To(Equal(false))
+		})
+	})
+
+	When("Getting status of existing sha without status", func() {
+		BeforeEach(func() {
+			var e error
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, DefaultBranch))
+			Expect(e).To(BeNil())
+
+			_, e = f.WriteString(fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			e = f.Close()
+			Expect(e).To(BeNil())
+
+			_, e = repo.CreateCommit(DefaultBranch, fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			e = repo.Push(DefaultBranch)
+			Expect(e).To(BeNil())
+
+			sha, e := repo.GetCurrentCommit()
+			Expect(e).To(BeNil())
+
+			state.Sha = sha.String()
+		})
+
+		AfterEach(func() {
+			e := os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+		})
+
+		It("to return an error", func() {
+			Expect(err.Error()).To(ContainSubstring("no status found for sha"))
+			Expect(status.Succeeded).To(Equal(false))
 		})
 	})
 })
