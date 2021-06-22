@@ -158,31 +158,26 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 }
 
 func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (Status, error) {
-	return Status{}, nil
-	// args := git.GetStatusesArgs{
-	// 	Project:      &g.proj,
-	// 	RepositoryId: &g.repo,
-	// 	CommitId:     &sha,
-	// }
-	// statuses, err := g.client.GetStatuses(ctx, args)
-	// if err != nil {
-	// 	return Status{}, err
-	// }
-	// genre := "fluxcd"
-	// name := fmt.Sprintf("%s-%s", group, env)
-	// for i := range *statuses {
-	// 	s := (*statuses)[i]
-	// 	comp := strings.Split(*s.Context.Name, "/")
-	// 	if len(comp) != 2 {
-	// 		return Status{}, fmt.Errorf("status name in wrong format: %q", *s.Context.Name)
-	// 	}
-	// 	if *s.Context.Genre == genre && comp[1] == name {
-	// 		return Status{
-	// 			Succeeded: *s.State == git.GitStatusStateValues.Succeeded,
-	// 		}, nil
-	// 	}
-	// }
-	// return Status{}, fmt.Errorf("no status found for sha %q", sha)
+	opts := &github.ListOptions{PerPage: 50}
+	statuses, _, err := g.client.Repositories.ListStatuses(ctx, g.owner, g.repo, sha, opts)
+	if err != nil {
+		return Status{}, err
+	}
+
+	name := fmt.Sprintf("%s-%s", group, env)
+	for _, s := range statuses {
+		comp := strings.Split(*s.Context, "/")
+		if len(comp) != 2 {
+			return Status{}, fmt.Errorf("status context in wrong format: %q", *s.Context)
+		}
+		if comp[1] == name {
+			return Status{
+				Succeeded: *s.State == "success",
+			}, nil
+		}
+	}
+
+	return Status{}, fmt.Errorf("no status found for sha %q", sha)
 }
 
 func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) error {
