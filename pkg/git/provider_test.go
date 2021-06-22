@@ -30,7 +30,7 @@ func TestNewGitProvider(t *testing.T) {
 			expectedProviderType: ProviderTypeGitHub,
 			remoteURL:            "https://github.com/organization/repository",
 			token:                "fake",
-			expectedError:        "GET https://api.github.com/user/repos: 401 Bad credentials []",
+			expectedError:        "unable to authenticate using token",
 		},
 		{
 			testDescription:      "fake provider returns error",

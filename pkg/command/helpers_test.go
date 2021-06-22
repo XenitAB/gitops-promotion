@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	scgit "github.com/fluxcd/source-controller/pkg/git"
 	git2go "github.com/libgit2/git2go/v31"
 	azdo "github.com/microsoft/azure-devops-go-api/azuredevops"
 	azdogit "github.com/microsoft/azure-devops-go-api/azuredevops/git"
@@ -66,32 +65,8 @@ func testSleepBackoff(t *testing.T, i int) {
 func testCloneRepository(t *testing.T, url, username, password, path, branchName string) {
 	t.Helper()
 
-	auth := testBasicAuthMethod(t, username, password)
-
-	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
-		FetchOptions: &git2go.FetchOptions{
-			DownloadTags: git2go.DownloadTagsNone,
-			RemoteCallbacks: git2go.RemoteCallbacks{
-				CredentialsCallback: auth.CredCallback,
-			},
-		},
-		CheckoutBranch: branchName,
-	})
+	err := git.Clone(url, username, password, path, branchName)
 	require.NoError(t, err)
-}
-
-func testBasicAuthMethod(t *testing.T, username, password string) *scgit.Auth {
-	t.Helper()
-
-	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
-		cred, err := git2go.NewCredUserpassPlaintext(username, password)
-		if err != nil {
-			return nil, err
-		}
-		return cred, nil
-	}
-
-	return &scgit.Auth{CredCallback: credCallback}
 }
 
 func testGetRepository(t *testing.T, path string) *git2go.Repository {

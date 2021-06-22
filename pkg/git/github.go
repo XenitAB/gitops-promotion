@@ -80,11 +80,18 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 	// Update PR if it already exists
 	listOpts := &github.PullRequestListOptions{
 		State: "open",
-		Head:  sourceName,
 		Base:  targetName,
 	}
 
-	prs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+
+	var prs []*github.PullRequest
+	for _, pr := range openPrs {
+		if pr.Head.Ref == &sourceName {
+			prs = append(prs, pr)
+		}
+	}
+
 	if err == nil && len(prs) > 0 {
 		if len(prs) != 1 {
 			return fmt.Errorf("Received more than one PRs when listing: %d", len(prs))

@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -81,6 +82,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	var err error
 	var branchName string
 	var auto bool
+	var tmpDir string
 	now := time.Now()
 	state := &PRState{
 		Env:   "dev",
@@ -109,7 +111,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 
 	When("Creating PR with non-existing branchName", func() {
 		BeforeEach(func() {
-			branchName = "test"
+			branchName = "does-not-exist"
 		})
 
 		It("returns error", func() {
@@ -120,7 +122,59 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			bodyErr = gitHubError.Response.Body.Close()
 			Expect(bodyErr).To(BeNil())
 
-			Expect(string(body)).To(ContainSubstring("{\"resource\":\"PullRequest\",\"code\":\"missing_field\",\"field\":\"head\"}"))
+			Expect(string(body)).To(ContainSubstring("{\"resource\":\"PullRequest\",\"field\":\"head\",\"code\":\"invalid\"}"))
+		})
+	})
+
+	When("Creating PR existing branchName", func() {
+		BeforeEach(func() {
+			branchName = "creating-pr-existing-branchname"
+
+			var e error
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			e = repo.CreateBranch(branchName, true)
+			Expect(e).To(BeNil())
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
+			Expect(e).To(BeNil())
+
+			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
+			Expect(e).To(BeNil())
+
+			_, e = f.WriteString(fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			e = f.Close()
+			Expect(e).To(BeNil())
+
+			_, e = repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+		})
+
+		AfterEach(func() {
+			e := os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+		})
+
+		It("doesn't return an error", func() {
+			Expect(err).To(BeNil())
 		})
 	})
 })
