@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v35/github"
 	"golang.org/x/oauth2"
@@ -181,35 +182,25 @@ func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group str
 }
 
 func (g *GitHubGITProvider) SetStatus(ctx context.Context, sha string, group string, env string, succeeded bool) error {
-	// genre := "fluxcd"
-	// description := fmt.Sprintf("%s-%s-%s", group, env, sha)
-	// name := fmt.Sprintf("kind/%s-%s", group, env)
+	description := fmt.Sprintf("%s-%s-%s", group, env, sha)
+	name := fmt.Sprintf("kind/%s-%s", group, env)
 
-	// state := &git.GitStatusStateValues.Succeeded
-	// if !succeeded {
-	// 	state = &git.GitStatusStateValues.Failed
-	// }
+	state := "success"
+	if !succeeded {
+		state = "failure"
+	}
 
-	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	// defer cancel()
+	status := &github.RepoStatus{
+		State:       &state,
+		Context:     &name,
+		Description: &description,
+	}
 
-	// createArgs := git.CreateCommitStatusArgs{
-	// 	Project:      &g.proj,
-	// 	RepositoryId: &g.repo,
-	// 	CommitId:     &sha,
-	// 	GitCommitStatusToCreate: &git.GitStatus{
-	// 		Description: &description,
-	// 		State:       state,
-	// 		Context: &git.GitStatusContext{
-	// 			Genre: &genre,
-	// 			Name:  &name,
-	// 		},
-	// 	},
-	// }
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
-	// _, err := g.client.CreateCommitStatus(ctx, createArgs)
-	// return err
-	return nil
+	_, _, err := g.client.Repositories.CreateStatus(ctx, g.owner, g.repo, sha, status)
+	return err
 }
 
 func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) error {

@@ -269,9 +269,33 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 			Expect(e).To(BeNil())
 		})
 
-		It("to return an error", func() {
+		It("to returns an error", func() {
 			Expect(err.Error()).To(ContainSubstring("no status found for sha"))
 			Expect(status.Succeeded).To(Equal(false))
+		})
+
+		When("and when a status is set to failure", func() {
+			BeforeEach(func() {
+				e := provider.SetStatus(ctx, state.Sha, state.Group, state.Env, false)
+				Expect(e).To(BeNil())
+			})
+
+			It("reports failure", func() {
+				Expect(err).To(BeNil())
+				Expect(status.Succeeded).To(Equal(false))
+			})
+		})
+
+		When("and when a status is set to success", func() {
+			BeforeEach(func() {
+				e := provider.SetStatus(ctx, state.Sha, state.Group, state.Env, true)
+				Expect(e).To(BeNil())
+			})
+
+			It("reports succeeds", func() {
+				Expect(err).To(BeNil())
+				Expect(status.Succeeded).To(Equal(true))
+			})
 		})
 	})
 })
