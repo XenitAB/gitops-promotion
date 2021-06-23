@@ -36,7 +36,7 @@ func TestE2EAzureDevOps(t *testing.T) {
 	repoDev := testGetRepository(t, path)
 	revDev := testGetRepositoryHeadRevision(t, repoDev)
 
-	testSetAzureDevOpsStatus(t, revDev, group, "dev", url, password, true)
+	testSetAzureDevOpsStatus(t, ctx, revDev, group, "dev", url, password, true)
 
 	// Test QA
 	promoteCommandMsgQa, err := PromoteCommand(ctx, path, password)
@@ -61,7 +61,7 @@ func TestE2EAzureDevOps(t *testing.T) {
 	repoMergedQa := testGetRepository(t, path)
 	revMergedQa := testGetRepositoryHeadRevision(t, repoMergedQa)
 
-	testSetAzureDevOpsStatus(t, revMergedQa, group, "qa", url, password, true)
+	testSetAzureDevOpsStatus(t, ctx, revMergedQa, group, "qa", url, password, true)
 
 	// Test PROD
 	promoteCommandMsgProd, err := PromoteCommand(ctx, path, password)
@@ -85,5 +85,5 @@ func TestE2EAzureDevOps(t *testing.T) {
 	repoMergedProd := testGetRepository(t, path)
 	revMergedProd := testGetRepositoryHeadRevision(t, repoMergedProd)
 
-	testSetAzureDevOpsStatus(t, revMergedProd, group, "prod", url, password, true)
+	testSetAzureDevOpsStatus(t, ctx, revMergedProd, group, "prod", url, password, true)
 }
