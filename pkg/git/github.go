@@ -180,6 +180,38 @@ func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group str
 	return Status{}, fmt.Errorf("no status found for sha %q", sha)
 }
 
+func (g *GitHubGITProvider) SetStatus(ctx context.Context, sha string, group string, env string, succeeded bool) error {
+	// genre := "fluxcd"
+	// description := fmt.Sprintf("%s-%s-%s", group, env, sha)
+	// name := fmt.Sprintf("kind/%s-%s", group, env)
+
+	// state := &git.GitStatusStateValues.Succeeded
+	// if !succeeded {
+	// 	state = &git.GitStatusStateValues.Failed
+	// }
+
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+
+	// createArgs := git.CreateCommitStatusArgs{
+	// 	Project:      &g.proj,
+	// 	RepositoryId: &g.repo,
+	// 	CommitId:     &sha,
+	// 	GitCommitStatusToCreate: &git.GitStatus{
+	// 		Description: &description,
+	// 		State:       state,
+	// 		Context: &git.GitStatusContext{
+	// 			Genre: &genre,
+	// 			Name:  &name,
+	// 		},
+	// 	},
+	// }
+
+	// _, err := g.client.CreateCommitStatus(ctx, createArgs)
+	// return err
+	return nil
+}
+
 func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) error {
 	return nil
 	// args := git.UpdatePullRequestArgs{

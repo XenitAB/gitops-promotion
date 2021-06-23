@@ -10,10 +10,7 @@ import (
 	"time"
 
 	git2go "github.com/libgit2/git2go/v31"
-	azdo "github.com/microsoft/azure-devops-go-api/azuredevops"
-	azdogit "github.com/microsoft/azure-devops-go-api/azuredevops/git"
 	"github.com/stretchr/testify/require"
-	giturls "github.com/whilp/git-urls"
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
@@ -89,38 +86,13 @@ func testGetRepositoryHeadRevision(t *testing.T, repo *git2go.Repository) string
 	return rev
 }
 
-func testSetAzureDevOpsStatus(t *testing.T, revision, group, env, url, token string, succeeded bool) {
+func testSetAzureDevOpsStatus(t *testing.T, ctx context.Context, revision, group, env, url, token string, succeeded bool) {
 	t.Helper()
 
-	genre := "fluxcd"
-	description := fmt.Sprintf("testing-%s-%s-%s", group, env, revision)
-	name := fmt.Sprintf("kind/%s-%s", group, env)
-	orgURL, project, repository := testGetAzureDevOpsStrings(t, url)
-	azdoClient := testGetAzureDevOpsClient(t, orgURL, token)
+	repo, err := git.NewGitProvider(ctx, git.ProviderTypeAzdo, url, token)
+	require.NoError(t, err)
 
-	state := &azdogit.GitStatusStateValues.Succeeded
-	if !succeeded {
-		state = &azdogit.GitStatusStateValues.Failed
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	createArgs := azdogit.CreateCommitStatusArgs{
-		Project:      &project,
-		RepositoryId: &repository,
-		CommitId:     &revision,
-		GitCommitStatusToCreate: &azdogit.GitStatus{
-			Description: &description,
-			State:       state,
-			Context: &azdogit.GitStatusContext{
-				Genre: &genre,
-				Name:  &name,
-			},
-		},
-	}
-
-	_, err := azdoClient.CreateCommitStatus(ctx, createArgs)
+	err = repo.SetStatus(ctx, revision, group, env, succeeded)
 	require.NoError(t, err)
 }
 
@@ -135,43 +107,4 @@ func testMergeAzureDevOpsPR(t *testing.T, ctx context.Context, url, token, branc
 
 	err = provider.MergePR(ctx, pr.ID, revision)
 	require.NoError(t, err)
-}
-
-func testGetAzureDevOpsStrings(t *testing.T, s string) (string, string, string) {
-	t.Helper()
-
-	u, err := giturls.Parse(s)
-	require.NoError(t, err)
-
-	scheme := u.Scheme
-	if u.Scheme == "ssh" {
-		scheme = "https"
-	}
-
-	id := strings.TrimLeft(u.Path, "/")
-	id = strings.TrimSuffix(id, ".git")
-	host := fmt.Sprintf("%s://%s", scheme, u.Host)
-
-	comp := strings.Split(id, "/")
-	if len(comp) != 4 {
-		require.NoError(t, fmt.Errorf("invalid repository id %q", id))
-	}
-
-	organization := comp[0]
-	project := comp[1]
-	repository := comp[3]
-
-	orgURL := fmt.Sprintf("%v/%v", host, organization)
-
-	return orgURL, project, repository
-}
-
-func testGetAzureDevOpsClient(t *testing.T, orgURL, token string) *azdogit.ClientImpl {
-	t.Helper()
-
-	connection := azdo.NewPatConnection(orgURL, token)
-	client := connection.GetClientByUrl(orgURL)
-	return &azdogit.ClientImpl{
-		Client: *client,
-	}
 }
