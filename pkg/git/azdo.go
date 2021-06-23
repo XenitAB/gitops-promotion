@@ -183,7 +183,7 @@ func (g *AzdoGITProvider) SetStatus(ctx context.Context, sha string, group strin
 		state = &git.GitStatusStateValues.Failed
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	createArgs := git.CreateCommitStatusArgs{
