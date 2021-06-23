@@ -3,6 +3,8 @@ package git
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
@@ -85,10 +87,13 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 	}
 
 	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+	if err != nil {
+		return err
+	}
 
 	var prs []*github.PullRequest
 	for _, pr := range openPrs {
-		if pr.Head.Ref == &sourceName {
+		if sourceName == *pr.Head.Ref {
 			prs = append(prs, pr)
 		}
 	}
@@ -204,80 +209,85 @@ func (g *GitHubGITProvider) SetStatus(ctx context.Context, sha string, group str
 }
 
 func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) error {
+	opts := &github.PullRequestOptions{
+		SHA: sha,
+	}
+
+	result, res, err := g.client.PullRequests.Merge(ctx, g.owner, g.repo, id, "", opts)
+	if err != nil {
+		return err
+	}
+
+	mergeSucceeded := *result.Merged
+
+	if !mergeSucceeded {
+		body, err := ioutil.ReadAll(res.Response.Body)
+		if err != nil {
+			return err
+		}
+
+		defer func() {
+			err := res.Response.Body.Close()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "MergePR - unable to close body: %v", err)
+			}
+		}()
+
+		return fmt.Errorf("PR with ID %d was not merged: %s", id, body)
+	}
+
 	return nil
-	// args := git.UpdatePullRequestArgs{
-	// 	Project:       &g.proj,
-	// 	RepositoryId:  &g.repo,
-	// 	PullRequestId: &id,
-	// 	GitPullRequestToUpdate: &git.GitPullRequest{
-	// 		Status: &git.PullRequestStatusValues.Completed,
-	// 		LastMergeSourceCommit: &git.GitCommitRef{
-	// 			CommitId: &sha,
-	// 		},
-	// 	},
-	// }
-	// _, err := g.client.UpdatePullRequest(ctx, args)
-	// return err
 }
 
 func (g *GitHubGITProvider) GetPRWithBranch(ctx context.Context, source, target string) (PullRequest, error) {
-	return PullRequest{}, nil
-	// sourceRefName := fmt.Sprintf("refs/heads/%s", source)
-	// targetRefName := fmt.Sprintf("refs/heads/%s", target)
-	// args := git.GetPullRequestsArgs{
-	// 	Project:      &g.proj,
-	// 	RepositoryId: &g.repo,
-	// 	SearchCriteria: &git.GitPullRequestSearchCriteria{
-	// 		SourceRefName: &sourceRefName,
-	// 		TargetRefName: &targetRefName,
-	// 	},
-	// }
-	// prs, err := g.client.GetPullRequests(ctx, args)
-	// if err != nil {
-	// 	return PullRequest{}, err
-	// }
-	// if len(*prs) == 0 {
-	// 	return PullRequest{}, fmt.Errorf("no PR found for branches %q-%q", source, target)
-	// }
+	listOpts := &github.PullRequestListOptions{
+		State: "open",
+		Base:  target,
+	}
 
-	// pr := (*prs)[0]
+	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+	if err != nil {
+		return PullRequest{}, err
+	}
 
-	// result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
-	// if err != nil {
-	// 	return PullRequest{}, err
-	// }
+	var prs []*github.PullRequest
+	for _, pr := range openPrs {
+		if source == *pr.Head.Ref {
+			prs = append(prs, pr)
+		}
+	}
 
-	// return result, nil
+	if len(prs) == 0 {
+		return PullRequest{}, fmt.Errorf("no PR found for branches %q-%q", source, target)
+	}
+
+	pr := prs[0]
+
+	return newPR(pr.Number, pr.Title, pr.Body, nil)
 }
 
 func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string) (PullRequest, error) {
-	return PullRequest{}, nil
-	// args := git.GetPullRequestQueryArgs{
-	// 	Project:      &g.proj,
-	// 	RepositoryId: &g.repo,
-	// 	Queries: &git.GitPullRequestQuery{
-	// 		Queries: &[]git.GitPullRequestQueryInput{
-	// 			{
-	// 				Items: &[]string{sha},
-	// 				Type:  &git.GitPullRequestQueryTypeValues.LastMergeCommit,
-	// 			},
-	// 		},
-	// 	},
-	// }
-	// query, err := g.client.GetPullRequestQuery(ctx, args)
-	// if err != nil {
-	// 	return PullRequest{}, err
-	// }
-	// results := *query.Results
-	// if len(results[0]) == 0 {
-	// 	return PullRequest{}, fmt.Errorf("no PR found for commit %q", sha)
-	// }
-	// pr := results[0][sha][0]
+	listOpts := &github.PullRequestListOptions{
+		State: "closed",
+	}
 
-	// result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
-	// if err != nil {
-	// 	return PullRequest{}, err
-	// }
+	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+	if err != nil {
+		return PullRequest{}, err
+	}
 
-	// return result, nil
+	var prs []*github.PullRequest
+	for _, pr := range openPrs {
+		if sha == *pr.Head.SHA {
+			prs = append(prs, pr)
+		}
+	}
+
+	if len(prs) == 0 {
+		return PullRequest{}, fmt.Errorf("no PR found for sha: %s", sha)
+	}
+
+	pr := prs[0]
+
+	return newPR(pr.Number, pr.Title, pr.Body, nil)
 }
