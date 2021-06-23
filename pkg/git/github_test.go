@@ -269,7 +269,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 			Expect(e).To(BeNil())
 		})
 
-		It("to returns an error", func() {
+		It("returns an error", func() {
 			Expect(err.Error()).To(ContainSubstring("no status found for sha"))
 			Expect(status.Succeeded).To(Equal(false))
 		})
@@ -296,6 +296,336 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 				Expect(err).To(BeNil())
 				Expect(status.Succeeded).To(Equal(true))
 			})
+		})
+	})
+})
+
+var _ = Describe("GitHubGITProvider MergePR", func() {
+	ctx := context.Background()
+	remoteURL := os.Getenv("GITHUB_URL")
+	token := os.Getenv("GITHUB_TOKEN")
+	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+
+	BeforeEach(func() {
+		if remoteURL == "" || token == "" {
+			Skip("GITHUB_URL and/or GITHUB_TOKEN environment variables not set")
+		}
+
+		if providerErr != nil {
+			Fail("Provider initialization failed")
+		}
+	})
+
+	var err error
+	var tmpDir string
+	var branchName string
+	var prID int
+	now := time.Now()
+	state := &PRState{
+		Env:   "dev",
+		Group: "testgroup",
+		App:   "testapp",
+		Tag:   now.Format("20060102150405"),
+		Sha:   "",
+	}
+
+	JustBeforeEach(func() {
+		err = provider.MergePR(ctx, prID, state.Sha)
+	})
+
+	When("Merging PR with empty prID and SHA", func() {
+		It("return error", func() {
+			gitHubError, ok := err.(*github.ErrorResponse)
+			Expect(ok).To(Equal(true))
+			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
+			Expect(bodyErr).To(BeNil())
+			bodyErr = gitHubError.Response.Body.Close()
+			Expect(bodyErr).To(BeNil())
+
+			Expect(string(body)).To(ContainSubstring("\"message\":\"Not Found\""))
+		})
+	})
+
+	When("Merging PR with existing prID and SHA", func() {
+		BeforeEach(func() {
+			branchName = "merging-pr-existing-branchname"
+
+			var e error
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			e = repo.CreateBranch(branchName, true)
+			Expect(e).To(BeNil())
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+
+			e = os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
+			Expect(e).To(BeNil())
+
+			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
+			Expect(e).To(BeNil())
+
+			_, e = f.WriteString(fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			e = f.Close()
+			Expect(e).To(BeNil())
+
+			sha, e := repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			state.Sha = sha.String()
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+
+			e = provider.CreatePR(ctx, branchName, false, state)
+			Expect(e).To(BeNil())
+
+			pr, e := provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			prID = pr.ID
+		})
+
+		AfterEach(func() {
+			e := os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+		})
+
+		It("doesn't return an error", func() {
+			Expect(err).To(BeNil())
+		})
+	})
+})
+
+var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
+	ctx := context.Background()
+	remoteURL := os.Getenv("GITHUB_URL")
+	token := os.Getenv("GITHUB_TOKEN")
+	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+
+	BeforeEach(func() {
+		if remoteURL == "" || token == "" {
+			Skip("GITHUB_URL and/or GITHUB_TOKEN environment variables not set")
+		}
+
+		if providerErr != nil {
+			Fail("Provider initialization failed")
+		}
+	})
+
+	var err error
+	var tmpDir string
+	var branchName string
+	var pr PullRequest
+	now := time.Now()
+	state := &PRState{
+		Env:   "dev",
+		Group: "testgroup",
+		App:   "testapp",
+		Tag:   now.Format("20060102150405"),
+		Sha:   "",
+	}
+
+	JustBeforeEach(func() {
+		pr, err = provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
+	})
+
+	When("Getting PR with empty branchName", func() {
+		It("returns an error", func() {
+			Expect(err.Error()).To(ContainSubstring("no PR found for branches"))
+		})
+	})
+
+	When("Getting PR with existing branchName", func() {
+		BeforeEach(func() {
+			branchName = "get-pr-by-branch"
+
+			var e error
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			e = repo.CreateBranch(branchName, true)
+			Expect(e).To(BeNil())
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+
+			e = os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
+			Expect(e).To(BeNil())
+
+			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
+			Expect(e).To(BeNil())
+
+			_, e = f.WriteString(fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			e = f.Close()
+			Expect(e).To(BeNil())
+
+			sha, e := repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			state.Sha = sha.String()
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+
+			e = provider.CreatePR(ctx, branchName, false, state)
+			Expect(e).To(BeNil())
+		})
+
+		AfterEach(func() {
+			e := os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+		})
+
+		It("doesn't return an error and ID larger than 0", func() {
+			Expect(err).To(BeNil())
+			Expect(pr.ID).To(BeNumerically(">", 0))
+		})
+	})
+})
+
+var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
+	ctx := context.Background()
+	remoteURL := os.Getenv("GITHUB_URL")
+	token := os.Getenv("GITHUB_TOKEN")
+	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+
+	BeforeEach(func() {
+		if remoteURL == "" || token == "" {
+			Skip("GITHUB_URL and/or GITHUB_TOKEN environment variables not set")
+		}
+
+		if providerErr != nil {
+			Fail("Provider initialization failed")
+		}
+	})
+
+	var err error
+	var tmpDir string
+	var branchName string
+	var pr PullRequest
+	var mergedPR PullRequest
+	now := time.Now()
+	state := &PRState{
+		Env:   "dev",
+		Group: "testgroup",
+		App:   "testapp",
+		Tag:   now.Format("20060102150405"),
+		Sha:   "",
+	}
+
+	JustBeforeEach(func() {
+		pr, err = provider.GetPRThatCausedCommit(ctx, state.Sha)
+	})
+
+	When("Getting PR with empty SHA", func() {
+		It("returns an error", func() {
+			Expect(err.Error()).To(ContainSubstring("no PR found for sha:"))
+		})
+	})
+
+	When("Getting PR with existing SHA", func() {
+		BeforeEach(func() {
+			branchName = "get-pr-by-sha"
+
+			var e error
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			e = repo.CreateBranch(branchName, true)
+			Expect(e).To(BeNil())
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+
+			e = os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
+			Expect(e).To(BeNil())
+
+			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			Expect(e).To(BeNil())
+
+			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
+			Expect(e).To(BeNil())
+
+			_, e = f.WriteString(fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			e = f.Close()
+			Expect(e).To(BeNil())
+
+			sha, e := repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+
+			state.Sha = sha.String()
+
+			e = repo.Push(branchName)
+			Expect(e).To(BeNil())
+
+			e = provider.CreatePR(ctx, branchName, false, state)
+			Expect(e).To(BeNil())
+
+			mergedPR, e = provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			e = provider.MergePR(ctx, mergedPR.ID, state.Sha)
+			Expect(e).To(BeNil())
+		})
+
+		AfterEach(func() {
+			e := os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+		})
+
+		It("doesn't return an error and pr.ID equals mergedPR.ID", func() {
+			Expect(err).To(BeNil())
+			Expect(pr.ID).To(Equal(mergedPR.ID))
 		})
 	})
 })
