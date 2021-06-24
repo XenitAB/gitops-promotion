@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -99,7 +100,8 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 
 	When("Creating PR with empty values", func() {
 		It("returns error", func() {
-			gitHubError, ok := err.(*github.ErrorResponse)
+			var gitHubError *github.ErrorResponse
+			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
 			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
@@ -116,7 +118,8 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		})
 
 		It("returns error", func() {
-			gitHubError, ok := err.(*github.ErrorResponse)
+			var gitHubError *github.ErrorResponse
+			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
 			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
@@ -249,7 +252,8 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 
 	When("Getting status of empty sha", func() {
 		It("return error", func() {
-			gitHubError, ok := err.(*github.ErrorResponse)
+			var gitHubError *github.ErrorResponse
+			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
 			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
@@ -366,7 +370,8 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 
 	When("Merging PR with empty prID and SHA", func() {
 		It("return error", func() {
-			gitHubError, ok := err.(*github.ErrorResponse)
+			var gitHubError *github.ErrorResponse
+			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
 			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
