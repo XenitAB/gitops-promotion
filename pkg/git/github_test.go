@@ -112,7 +112,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 
 	When("Creating PR with non-existing branchName", func() {
 		BeforeEach(func() {
-			branchName = "does-not-exist"
+			branchName = "testing-does-not-exist"
 		})
 
 		It("returns error", func() {
@@ -127,9 +127,9 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		})
 	})
 
-	When("Creating PR existing branchName", func() {
+	When("Creating PR force pushed branchName", func() {
 		BeforeEach(func() {
-			branchName = "creating-pr-existing-branchname"
+			branchName = "testing-create-pr"
 
 			var e error
 			tmpDir, e = ioutil.TempDir("", "testing")
@@ -171,7 +171,35 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			_, e = repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
 			Expect(e).To(BeNil())
 
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
+			Expect(e).To(BeNil())
+		})
+
+		AfterEach(func() {
+			e := os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+		})
+
+		It("doesn't return an error", func() {
+			Expect(err).To(BeNil())
+		})
+	})
+
+	When("Creating PR with existing PR and branchName", func() {
+		BeforeEach(func() {
+			branchName = "testing-create-pr"
+
+			var e error
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
+			Expect(e).To(BeNil())
+
+			repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
+			Expect(e).To(BeNil())
+
+			_, e = repo.GetPRForCurrentBranch(ctx)
 			Expect(e).To(BeNil())
 		})
 
@@ -351,7 +379,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 
 	When("Merging PR with existing prID and SHA", func() {
 		BeforeEach(func() {
-			branchName = "merging-pr-existing-branchname"
+			branchName = "testing-merge-pr"
 
 			var e error
 			tmpDir, e = ioutil.TempDir("", "testing")
@@ -460,7 +488,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 
 	When("Getting PR with existing branchName", func() {
 		BeforeEach(func() {
-			branchName = "get-pr-by-branch"
+			branchName = "testing-get-pr-with-branch"
 
 			var e error
 			tmpDir, e = ioutil.TempDir("", "testing")
@@ -566,7 +594,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 
 	When("Getting PR with existing SHA", func() {
 		BeforeEach(func() {
-			branchName = "get-pr-by-sha"
+			branchName = "testing-get-pr-that-caused-commit"
 
 			var e error
 			tmpDir, e = ioutil.TempDir("", "testing")
@@ -605,7 +633,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			e = f.Close()
 			Expect(e).To(BeNil())
 
-			sha, e := repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
+			commitSha, e := repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
 			Expect(e).To(BeNil())
 
 			e = repo.Push(branchName, true)
@@ -617,8 +645,22 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			mergedPR, e = provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
 			Expect(e).To(BeNil())
 
-			e = provider.MergePR(ctx, mergedPR.ID, state.Sha)
+			e = provider.MergePR(ctx, mergedPR.ID, commitSha.String())
 			Expect(e).To(BeNil())
+
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+
+			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
+			Expect(e).To(BeNil())
+
+			repo, e = LoadRepository(ctx, tmpDir, providerTypeString, token)
+			Expect(e).To(BeNil())
+
+			mergeSha, e := repo.GetCurrentCommit()
+			Expect(e).To(BeNil())
+
+			state.Sha = mergeSha.String()
 		})
 
 		AfterEach(func() {
