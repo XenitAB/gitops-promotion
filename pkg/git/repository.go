@@ -18,7 +18,7 @@ type Repository struct {
 }
 
 // LoadRepository loads a local git repository.
-func LoadRepository(ctx context.Context, path string, providerType ProviderType, token string) (*Repository, error) {
+func LoadRepository(ctx context.Context, path string, providerTypeString string, token string) (*Repository, error) {
 	localRepo, err := git2go.OpenRepository(path)
 	if err != nil {
 		return &Repository{}, fmt.Errorf("could not open repository: %w", err)
@@ -27,6 +27,11 @@ func LoadRepository(ctx context.Context, path string, providerType ProviderType,
 	remote, err := localRepo.Remotes.Lookup(DefaultRemote)
 	if err != nil {
 		return nil, fmt.Errorf("could not get remote: %w", err)
+	}
+
+	providerType, err := StringToProviderType(providerTypeString)
+	if err != nil {
+		return nil, fmt.Errorf("could not get providerType: %w", err)
 	}
 
 	provider, err := NewGitProvider(ctx, providerType, remote.Url(), token)

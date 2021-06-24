@@ -86,20 +86,30 @@ func testGetRepositoryHeadRevision(t *testing.T, repo *git2go.Repository) string
 	return rev
 }
 
-func testSetAzureDevOpsStatus(t *testing.T, ctx context.Context, revision, group, env, url, token string, succeeded bool) {
+func testSetStatus(
+	t *testing.T,
+	ctx context.Context,
+	providerType git.ProviderType,
+	revision,
+	group,
+	env,
+	url,
+	token string,
+	succeeded bool,
+) {
 	t.Helper()
 
-	repo, err := git.NewGitProvider(ctx, git.ProviderTypeAzdo, url, token)
+	repo, err := git.NewGitProvider(ctx, providerType, url, token)
 	require.NoError(t, err)
 
 	err = repo.SetStatus(ctx, revision, group, env, succeeded)
 	require.NoError(t, err)
 }
 
-func testMergeAzureDevOpsPR(t *testing.T, ctx context.Context, url, token, branch, revision string) {
+func testMergePR(t *testing.T, ctx context.Context, providerType git.ProviderType, url, token, branch, revision string) {
 	t.Helper()
 
-	provider, err := git.NewAzdoGITProvider(ctx, url, token)
+	provider, err := git.NewGitProvider(ctx, providerType, url, token)
 	require.NoError(t, err)
 
 	pr, err := provider.GetPRWithBranch(ctx, branch, "main")

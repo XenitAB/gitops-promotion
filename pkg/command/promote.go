@@ -11,12 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func PromoteCommand(ctx context.Context, path, token string) (string, error) {
+func PromoteCommand(ctx context.Context, providerType string, path, token string) (string, error) {
 	cfg, err := getConfig(path)
 	if err != nil {
 		return "", fmt.Errorf("could not get configuration: %w", err)
 	}
-	repo, err := getRepository(ctx, path, token)
+	repo, err := getRepository(ctx, providerType, path, token)
 	if err != nil {
 		return "", fmt.Errorf("could not get repository: %w", err)
 	}

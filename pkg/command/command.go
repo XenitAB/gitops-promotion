@@ -16,8 +16,8 @@ func getConfig(path string) (config.Config, error) {
 	return cfg, nil
 }
 
-func getRepository(ctx context.Context, path, token string) (*git.Repository, error) {
-	repo, err := git.LoadRepository(ctx, path, git.ProviderTypeAzdo, token)
+func getRepository(ctx context.Context, providerType string, path, token string) (*git.Repository, error) {
+	repo, err := git.LoadRepository(ctx, path, providerType, token)
 	if err != nil {
 		return nil, fmt.Errorf("could not load repository: %w", err)
 	}
