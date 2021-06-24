@@ -67,6 +67,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
+	providerTypeString := "github"
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -137,7 +138,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
 			Expect(e).To(BeNil())
 
-			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			e = repo.CreateBranch(branchName, true)
@@ -155,7 +156,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
 			Expect(e).To(BeNil())
 
-			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e = LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
@@ -189,6 +190,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
+	providerTypeString := "github"
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -240,7 +242,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
 			Expect(e).To(BeNil())
 
-			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, DefaultBranch))
@@ -304,6 +306,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
+	providerTypeString := "github"
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -357,7 +360,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
 			Expect(e).To(BeNil())
 
-			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			e = repo.CreateBranch(branchName, true)
@@ -375,7 +378,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
 			Expect(e).To(BeNil())
 
-			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e = LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
@@ -419,6 +422,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
+	providerTypeString := "github"
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -465,7 +469,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
 			Expect(e).To(BeNil())
 
-			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			e = repo.CreateBranch(branchName, true)
@@ -483,7 +487,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
 			Expect(e).To(BeNil())
 
-			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e = LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
@@ -523,6 +527,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
+	providerTypeString := "github"
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -570,7 +575,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
 			Expect(e).To(BeNil())
 
-			repo, e := LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			e = repo.CreateBranch(branchName, true)
@@ -588,7 +593,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			e = Clone(remoteURL, "pat", token, tmpDir, branchName)
 			Expect(e).To(BeNil())
 
-			repo, e = LoadRepository(ctx, tmpDir, ProviderTypeGitHub, token)
+			repo, e = LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
 			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))

@@ -6,12 +6,12 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-func NewCommand(ctx context.Context, path, token, group, app, tag string) (string, error) {
+func NewCommand(ctx context.Context, providerType string, path, token, group, app, tag string) (string, error) {
 	cfg, err := getConfig(path)
 	if err != nil {
 		return "", err
 	}
-	repo, err := getRepository(ctx, path, token)
+	repo, err := getRepository(ctx, providerType, path, token)
 	if err != nil {
 		return "", err
 	}
