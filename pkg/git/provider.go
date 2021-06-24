@@ -35,9 +35,9 @@ func NewGitProvider(ctx context.Context, providerType ProviderType, remoteURL, t
 
 func StringToProviderType(p string) (ProviderType, error) {
 	switch strings.ToLower(p) {
-	case "azdo":
+	case string(ProviderTypeAzdo):
 		return ProviderTypeAzdo, nil
-	case "github":
+	case string(ProviderTypeGitHub):
 		return ProviderTypeGitHub, nil
 	default:
 		return "", fmt.Errorf("Unknown provider selected: %s", p)

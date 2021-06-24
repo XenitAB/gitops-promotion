@@ -67,7 +67,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
-	providerTypeString := "github"
+	providerTypeString := string(ProviderTypeGitHub)
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -218,7 +218,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
-	providerTypeString := "github"
+	providerTypeString := string(ProviderTypeGitHub)
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -334,7 +334,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
-	providerTypeString := "github"
+	providerTypeString := string(ProviderTypeGitHub)
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -450,7 +450,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
-	providerTypeString := "github"
+	providerTypeString := string(ProviderTypeGitHub)
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
@@ -555,7 +555,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 	ctx := context.Background()
 	remoteURL := os.Getenv("GITHUB_URL")
 	token := os.Getenv("GITHUB_TOKEN")
-	providerTypeString := "github"
+	providerTypeString := string(ProviderTypeGitHub)
 	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
