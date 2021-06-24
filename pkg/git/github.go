@@ -113,6 +113,10 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 		updateOpts := &github.PullRequestBranchUpdateOptions{}
 		_, _, err := g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, *pr.Number, updateOpts)
 
+		if _, ok := err.(*github.AcceptedError); ok {
+			return nil
+		}
+
 		return err
 	}
 
@@ -271,14 +275,14 @@ func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha strin
 		State: "closed",
 	}
 
-	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+	closedPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
 	if err != nil {
 		return PullRequest{}, err
 	}
 
 	var prs []*github.PullRequest
-	for _, pr := range openPrs {
-		if sha == *pr.Head.SHA {
+	for _, pr := range closedPrs {
+		if sha == *pr.MergeCommitSHA {
 			prs = append(prs, pr)
 		}
 	}
