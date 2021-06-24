@@ -228,12 +228,9 @@ func (g *Repository) GetPRThatCausedCurrentCommit(ctx context.Context) (PullRequ
 }
 
 func Clone(url, username, password, path, branchName string) error {
-	auth, err := basicAuthMethod(username, password)
-	if err != nil {
-		return err
-	}
+	auth := basicAuthMethod(username, password)
 
-	_, err = git2go.Clone(url, path, &git2go.CloneOptions{
+	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
 		FetchOptions: &git2go.FetchOptions{
 			DownloadTags: git2go.DownloadTagsNone,
 			RemoteCallbacks: git2go.RemoteCallbacks{
@@ -246,14 +243,15 @@ func Clone(url, username, password, path, branchName string) error {
 	return err
 }
 
-func basicAuthMethod(username, password string) (*scgit.Auth, error) {
+func basicAuthMethod(username, password string) *scgit.Auth {
 	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
 		cred, err := git2go.NewCredUserpassPlaintext(username, password)
 		if err != nil {
 			return nil, err
 		}
+
 		return cred, nil
 	}
 
-	return &scgit.Auth{CredCallback: credCallback}, nil
+	return &scgit.Auth{CredCallback: credCallback}
 }
