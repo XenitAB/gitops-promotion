@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -53,8 +54,8 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 
 	_, _, err = client.Repositories.List(ctx, "", nil)
 	if err != nil {
-		githubError, ok := err.(*github.ErrorResponse)
-		if ok {
+		var githubError *github.ErrorResponse
+		if errors.As(err, &githubError) {
 			if githubError.Response.StatusCode == 401 {
 				return nil, fmt.Errorf("unable to authenticate using token")
 			}
@@ -113,7 +114,8 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 		updateOpts := &github.PullRequestBranchUpdateOptions{}
 		_, _, err := g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, *pr.Number, updateOpts)
 
-		if _, ok := err.(*github.AcceptedError); ok {
+		var githubError *github.AcceptedError
+		if errors.As(err, &githubError) {
 			return nil
 		}
 
