@@ -18,9 +18,8 @@ require (
 	github.com/google/go-containerregistry v0.5.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
-	github.com/jfrog/jfrog-client-go v0.24.0
+	github.com/jfrog/jfrog-client-go v0.25.0
 	github.com/klauspost/compress v1.12.2 // indirect
-	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/libgit2/git2go/v31 v31.4.14
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
