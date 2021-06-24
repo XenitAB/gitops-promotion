@@ -140,7 +140,7 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 }
 
 // Push pushes the defined ref to remote.
-func (g *Repository) Push(branchName string) error {
+func (g *Repository) Push(branchName string, force bool) error {
 	remote, err := g.gitRepository.Remotes.Lookup(DefaultRemote)
 	if err != nil {
 		return fmt.Errorf("could not find remote %q: %w", DefaultRemote, err)
@@ -155,7 +155,13 @@ func (g *Repository) Push(branchName string) error {
 			return cred, nil
 		},
 	}
-	branches := []string{fmt.Sprintf("+refs/heads/%s", branchName)}
+
+	forceFlag := "+"
+	if !force {
+		forceFlag = ""
+	}
+
+	branches := []string{fmt.Sprintf("%srefs/heads/%s", forceFlag, branchName)}
 	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: callback})
 	if err != nil {
 		return fmt.Errorf("failed pushing branches %s: %w", branches, err)

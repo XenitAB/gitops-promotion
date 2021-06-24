@@ -66,7 +66,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not commit changes: %w", err)
 	}
-	err = repo.Push(state.BranchName())
+	err = repo.Push(state.BranchName(), true)
 	if err != nil {
 		return "", fmt.Errorf("could not push changes: %w", err)
 	}
