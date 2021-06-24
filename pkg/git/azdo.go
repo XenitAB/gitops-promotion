@@ -279,9 +279,3 @@ func (g *AzdoGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string)
 
 	return result, nil
 }
-
-type azureDevOpsRepository struct {
-	organizationURL string
-	project         string
-	repository      string
-}
