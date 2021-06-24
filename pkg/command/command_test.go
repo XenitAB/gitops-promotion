@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
 func TestE2EAzureDevOps(t *testing.T) {
@@ -16,6 +17,10 @@ func TestE2EAzureDevOps(t *testing.T) {
 	defaultBranch := "main"
 	path := t.TempDir()
 
+	providerTypeString := "azdo"
+	providerType, err := git.StringToProviderType(providerTypeString)
+	require.NoError(t, err)
+
 	testCloneRepository(t, url, username, password, path, defaultBranch)
 
 	now := time.Now()
@@ -23,10 +28,12 @@ func TestE2EAzureDevOps(t *testing.T) {
 	group := "testgroup"
 	app := "testapp"
 
+	promoteBranchName := fmt.Sprintf("promote/%s-%s", group, app)
+
 	ctx := context.Background()
 
 	// Test DEV
-	newCommandMsgDev, err := NewCommand(ctx, path, password, group, app, tag)
+	newCommandMsgDev, err := NewCommand(ctx, providerTypeString, path, password, group, app, tag)
 	require.NoError(t, err)
 
 	require.Equal(t, "created promotions pull request", newCommandMsgDev)
@@ -36,17 +43,16 @@ func TestE2EAzureDevOps(t *testing.T) {
 	repoDev := testGetRepository(t, path)
 	revDev := testGetRepositoryHeadRevision(t, repoDev)
 
-	testSetAzureDevOpsStatus(t, ctx, revDev, group, "dev", url, password, true)
+	testSetStatus(t, ctx, providerType, revDev, group, "dev", url, password, true)
 
 	// Test QA
-	promoteCommandMsgQa, err := PromoteCommand(ctx, path, password)
+	promoteCommandMsgQa, err := PromoteCommand(ctx, providerTypeString, path, password)
 	require.NoError(t, err)
 
 	require.Equal(t, "created promotions pull request", promoteCommandMsgQa)
 
-	promoteBranchName := fmt.Sprintf("promote/%s-%s", group, app)
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "qa", app, tag)
-	statusCommandMsgQa, err := StatusCommand(ctx, path, password)
+	statusCommandMsgQa, err := StatusCommand(ctx, providerTypeString, path, password)
 	require.NoError(t, err)
 
 	require.Equal(t, "status check has succeed", statusCommandMsgQa)
@@ -54,23 +60,23 @@ func TestE2EAzureDevOps(t *testing.T) {
 	repoQa := testGetRepository(t, path)
 	revQa := testGetRepositoryHeadRevision(t, repoQa)
 
-	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revQa)
+	testMergePR(t, ctx, providerType, url, password, promoteBranchName, revQa)
 
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "qa", app, tag)
 
 	repoMergedQa := testGetRepository(t, path)
 	revMergedQa := testGetRepositoryHeadRevision(t, repoMergedQa)
 
-	testSetAzureDevOpsStatus(t, ctx, revMergedQa, group, "qa", url, password, true)
+	testSetStatus(t, ctx, providerType, revMergedQa, group, "qa", url, password, true)
 
 	// Test PROD
-	promoteCommandMsgProd, err := PromoteCommand(ctx, path, password)
+	promoteCommandMsgProd, err := PromoteCommand(ctx, providerTypeString, path, password)
 	require.NoError(t, err)
 
 	require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
 
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "prod", app, tag)
-	statusCommandMsgProd, err := StatusCommand(ctx, path, password)
+	statusCommandMsgProd, err := StatusCommand(ctx, providerTypeString, path, password)
 	require.NoError(t, err)
 
 	require.Equal(t, "status check has succeed", statusCommandMsgProd)
@@ -78,12 +84,105 @@ func TestE2EAzureDevOps(t *testing.T) {
 	repoProd := testGetRepository(t, path)
 	revProd := testGetRepositoryHeadRevision(t, repoProd)
 
-	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revProd)
+	testMergePR(t, ctx, providerType, url, password, promoteBranchName, revProd)
 
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "prod", app, tag)
 
 	repoMergedProd := testGetRepository(t, path)
 	revMergedProd := testGetRepositoryHeadRevision(t, repoMergedProd)
 
-	testSetAzureDevOpsStatus(t, ctx, revMergedProd, group, "prod", url, password, true)
+	testSetStatus(t, ctx, providerType, revMergedProd, group, "prod", url, password, true)
+}
+
+func TestE2EGitHub(t *testing.T) {
+	username := "gitops-promotion"
+	password := testGetEnvOrSkip(t, "GITHUB_TOKEN")
+	url := testGetEnvOrSkip(t, "GITHUB_URL")
+	defaultBranch := "main"
+	path := t.TempDir()
+
+	providerTypeString := "github"
+	providerType, err := git.StringToProviderType(providerTypeString)
+	require.NoError(t, err)
+
+	testCloneRepository(t, url, username, password, path, defaultBranch)
+
+	now := time.Now()
+	tag := now.Format("20060102150405")
+	group := "testgroup"
+	app := "testapp"
+
+	promoteBranchName := fmt.Sprintf("promote/%s-%s", group, app)
+
+	ctx := context.Background()
+
+	// Test DEV
+	newCommandMsgDev, err := NewCommand(ctx, providerTypeString, path, password, group, app, tag)
+	require.NoError(t, err)
+
+	require.Equal(t, "created promotions pull request", newCommandMsgDev)
+
+	// TODO: Remove when auto merge is enabled in GitHub
+	// START - Fake auto merge in GitHub
+	pathFake := testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "dev", app, tag)
+	repoDevFake := testGetRepository(t, pathFake)
+	revDevFake := testGetRepositoryHeadRevision(t, repoDevFake)
+
+	testMergePR(t, ctx, providerType, url, password, promoteBranchName, revDevFake)
+	// STOP - Fake auto merge in GitHub
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "dev", app, tag)
+
+	repoDev := testGetRepository(t, path)
+	revDev := testGetRepositoryHeadRevision(t, repoDev)
+
+	testSetStatus(t, ctx, providerType, revDev, group, "dev", url, password, true)
+
+	// Test QA
+	promoteCommandMsgQa, err := PromoteCommand(ctx, providerTypeString, path, password)
+	require.NoError(t, err)
+
+	require.Equal(t, "created promotions pull request", promoteCommandMsgQa)
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "qa", app, tag)
+	statusCommandMsgQa, err := StatusCommand(ctx, providerTypeString, path, password)
+	require.NoError(t, err)
+
+	require.Equal(t, "status check has succeed", statusCommandMsgQa)
+
+	repoQa := testGetRepository(t, path)
+	revQa := testGetRepositoryHeadRevision(t, repoQa)
+
+	testMergePR(t, ctx, providerType, url, password, promoteBranchName, revQa)
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "qa", app, tag)
+
+	repoMergedQa := testGetRepository(t, path)
+	revMergedQa := testGetRepositoryHeadRevision(t, repoMergedQa)
+
+	testSetStatus(t, ctx, providerType, revMergedQa, group, "qa", url, password, true)
+
+	// Test PROD
+	promoteCommandMsgProd, err := PromoteCommand(ctx, providerTypeString, path, password)
+	require.NoError(t, err)
+
+	require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "prod", app, tag)
+	statusCommandMsgProd, err := StatusCommand(ctx, providerTypeString, path, password)
+	require.NoError(t, err)
+
+	require.Equal(t, "status check has succeed", statusCommandMsgProd)
+
+	repoProd := testGetRepository(t, path)
+	revProd := testGetRepositoryHeadRevision(t, repoProd)
+
+	testMergePR(t, ctx, providerType, url, password, promoteBranchName, revProd)
+
+	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "prod", app, tag)
+
+	repoMergedProd := testGetRepository(t, path)
+	revMergedProd := testGetRepositoryHeadRevision(t, repoMergedProd)
+
+	testSetStatus(t, ctx, providerType, revMergedProd, group, "prod", url, password, true)
 }
