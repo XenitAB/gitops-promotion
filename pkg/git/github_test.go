@@ -141,10 +141,10 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
 			Expect(e).To(BeNil())
 
-			e = repo.CreateBranch(branchName, true)
+			e = repo.CreateBranch(branchName, false)
 			Expect(e).To(BeNil())
 
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
 			Expect(e).To(BeNil())
 
 			e = os.RemoveAll(tmpDir)
@@ -257,7 +257,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 			_, e = repo.CreateCommit(DefaultBranch, fmt.Sprintln(time.Now()))
 			Expect(e).To(BeNil())
 
-			e = repo.Push(DefaultBranch)
+			e = repo.Push(DefaultBranch, true)
 			Expect(e).To(BeNil())
 
 			sha, e := repo.GetCurrentCommit()
@@ -366,7 +366,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			e = repo.CreateBranch(branchName, true)
 			Expect(e).To(BeNil())
 
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
 			Expect(e).To(BeNil())
 
 			e = os.RemoveAll(tmpDir)
@@ -395,7 +395,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 
 			state.Sha = sha.String()
 
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
 			Expect(e).To(BeNil())
 
 			e = provider.CreatePR(ctx, branchName, false, state)
@@ -475,7 +475,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 			e = repo.CreateBranch(branchName, true)
 			Expect(e).To(BeNil())
 
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
 			Expect(e).To(BeNil())
 
 			e = os.RemoveAll(tmpDir)
@@ -504,7 +504,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 
 			state.Sha = sha.String()
 
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
 			Expect(e).To(BeNil())
 
 			e = provider.CreatePR(ctx, branchName, false, state)
@@ -581,7 +581,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			e = repo.CreateBranch(branchName, true)
 			Expect(e).To(BeNil())
 
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
 			Expect(e).To(BeNil())
 
 			e = os.RemoveAll(tmpDir)
@@ -608,9 +608,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			sha, e := repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
 			Expect(e).To(BeNil())
 
-			state.Sha = sha.String()
-
-			e = repo.Push(branchName)
+			e = repo.Push(branchName, true)
 			Expect(e).To(BeNil())
 
 			e = provider.CreatePR(ctx, branchName, false, state)
