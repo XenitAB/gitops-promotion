@@ -323,8 +323,8 @@ github.com/fluxcd/image-automation-controller v0.6.2-0.20210303130129-2eebaa46c7
 github.com/fluxcd/image-automation-controller v0.6.2-0.20210303130129-2eebaa46c79b/go.mod h1:d5RyJw98uVpSbNNH7FxcoE1Sw5jmcpakKOXhTXCzA7s=
 github.com/fluxcd/image-automation-controller/api v0.6.1/go.mod h1:8Q/baOONPrSJFMq7+zxp/t2WGrqVFRUx4HnTrg37pNE=
 github.com/fluxcd/image-reflector-controller/api v0.7.0/go.mod h1:KHWknF2xu/GZ4uLSQcAmfONZYjsbwNqyk3OvMQTmMsA=
-github.com/fluxcd/image-reflector-controller/api v0.10.0 h1:uZsf5X0Djko2yJMNdKn516nKCiSBFecE8c+O66lrgyI=
-github.com/fluxcd/image-reflector-controller/api v0.10.0/go.mod h1:X4qZ11pfA5w1ajbkYbWmQ3hBW3gzCyIjhU87AvV6o2A=
+github.com/fluxcd/image-reflector-controller/api v0.11.0 h1:Pz9GuUQvmJO5nJPEtGBRQnIHvcY+ITqI4LdSiW11toE=
+github.com/fluxcd/image-reflector-controller/api v0.11.0/go.mod h1:X4qZ11pfA5w1ajbkYbWmQ3hBW3gzCyIjhU87AvV6o2A=
 github.com/fluxcd/pkg/apis/meta v0.7.0/go.mod h1:yHuY8kyGHYz22I0jQzqMMGCcHViuzC/WPdo9Gisk8Po=
 github.com/fluxcd/pkg/apis/meta v0.8.0/go.mod h1:yHuY8kyGHYz22I0jQzqMMGCcHViuzC/WPdo9Gisk8Po=
 github.com/fluxcd/pkg/apis/meta v0.10.0 h1:N7wVGHC1cyPdT87hrDC7UwCwRwnZdQM46PBSLjG2rlE=

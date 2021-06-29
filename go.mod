@@ -6,7 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.0.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/fluxcd/image-automation-controller v0.12.0
-	github.com/fluxcd/image-reflector-controller/api v0.10.0
+	github.com/fluxcd/image-reflector-controller/api v0.11.0
 	github.com/fluxcd/source-controller v0.15.0
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect
