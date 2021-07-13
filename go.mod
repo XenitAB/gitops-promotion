@@ -16,7 +16,7 @@ require (
 	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-openapi/validate v0.20.2 // indirect
 	github.com/google/go-containerregistry v0.5.0 // indirect
-	github.com/google/go-github/v35 v35.3.0
+	github.com/google/go-github/v37 v37.0.0
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/jfrog/jfrog-client-go v0.26.1
