@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine as builder
+FROM golang:1.16.6-alpine as builder
 RUN apk add --no-cache gcc~=10.2.1_pre1-r3 pkgconfig~=1.7.3-r0 libc-dev~=0.7.2-r3
 RUN apk add --no-cache musl~=1.2 libgit2-dev~=1.1
 WORKDIR /workspace
