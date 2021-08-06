@@ -7,7 +7,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/fluxcd/image-automation-controller v0.12.0
 	github.com/fluxcd/image-reflector-controller/api v0.10.0
-	github.com/fluxcd/source-controller v0.15.0
+	github.com/fluxcd/source-controller v0.15.4
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect
 	github.com/go-openapi/errors v0.20.0 // indirect
@@ -31,9 +31,8 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.21.2
+	k8s.io/apimachinery v0.21.3
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.1.1 // indirect
 )
 
 replace github.com/fluxcd/image-automation-controller => github.com/fluxcd/image-automation-controller v0.6.2-0.20210303130129-2eebaa46c79b
