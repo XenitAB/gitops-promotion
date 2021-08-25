@@ -81,7 +81,6 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 		return err
 	}
 
-	// Update PR if it already exists
 	listOpts := &github.PullRequestListOptions{
 		State: "open",
 		Base:  targetName,
@@ -92,81 +91,37 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 		return err
 	}
 
-	var prs []*github.PullRequest
+	var prsOnBranch []*github.PullRequest
 	for _, pr := range openPrs {
 		if sourceName == *pr.Head.Ref {
-			prs = append(prs, pr)
+			prsOnBranch = append(prsOnBranch, pr)
 		}
 	}
 
-	if err == nil && len(prs) > 0 {
-		if len(prs) != 1 {
-			return fmt.Errorf("Received more than one PRs when listing: %d", len(prs))
+	var pr *github.PullRequest
+	switch len(prsOnBranch) {
+	case 0:
+		createOpts := &github.NewPullRequest{
+			Title:               &title,
+			Body:                &description,
+			Head:                &sourceName,
+			Base:                &targetName,
+			MaintainerCanModify: github.Bool(true),
 		}
-
-		pr := (prs)[0]
-		// TODO: Continue with automerge stuff when this i merged: https://github.com/google/go-github/pull/1896
-		// var autoCompleteSetBy *webapi.IdentityRef
-		// if auto {
-		// 	autoCompleteSetBy = pr.CreatedBy
-		// }
-
+		_, _, err = g.client.PullRequests.Create(ctx, g.owner, g.repo, createOpts)
+	case 1:
+		pr = (prsOnBranch)[0]
 		updateOpts := &github.PullRequestBranchUpdateOptions{}
-		_, _, err := g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, *pr.Number, updateOpts)
+		_, _, err = g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, *pr.Number, updateOpts)
 
 		var githubError *github.AcceptedError
 		if errors.As(err, &githubError) {
-			return nil
+			err = nil
 		}
-
-		return err
+	default:
+		return fmt.Errorf("received more than one PRs when listing: %d", len(prsOnBranch))
 	}
-
-	// Create new PR
-	// deleteSourceBranch := true
-	// createArgs := git.CreatePullRequestArgs{
-	// 	Project:      &g.proj,
-	// 	RepositoryId: &g.repo,
-	// 	GitPullRequestToCreate: &git.GitPullRequest{
-	// 		Title:         &title,
-	// 		Description:   &description,
-	// 		SourceRefName: &sourceRefName,
-	// 		TargetRefName: &targetRefName,
-	// 		CompletionOptions: &git.GitPullRequestCompletionOptions{
-	// 			DeleteSourceBranch: &deleteSourceBranch,
-	// 		},
-	// 	},
-	// }
-	// pr, err := g.client.CreatePullRequest(ctx, createArgs)
-	createOpts := &github.NewPullRequest{
-		Title:               &title,
-		Body:                &description,
-		Head:                &sourceName,
-		Base:                &targetName,
-		MaintainerCanModify: github.Bool(true),
-	}
-	_, _, err = g.client.PullRequests.Create(ctx, g.owner, g.repo, createOpts)
 	return err
-
-	// TODO: Continue with automerge stuff when this i merged: https://github.com/google/go-github/pull/1896
-	// if !auto {
-	// 	return nil
-	// }
-
-	// This update is done to set auto merge. The reason this is not
-	// done when creating is because there is no reasonable way to
-	// get the identity ref other than from the response.
-	// updatePR := git.GitPullRequest{
-	// 	AutoCompleteSetBy: pr.CreatedBy,
-	// }
-	// updateArgs := git.UpdatePullRequestArgs{
-	// 	Project:                &g.proj,
-	// 	RepositoryId:           &g.repo,
-	// 	PullRequestId:          pr.PullRequestId,
-	// 	GitPullRequestToUpdate: &updatePR,
-	// }
-	// _, err = g.client.UpdatePullRequest(ctx, updateArgs)
-	// return err
 }
 
 func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (Status, error) {
