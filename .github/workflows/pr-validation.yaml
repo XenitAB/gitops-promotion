@@ -86,6 +86,8 @@ jobs:
         env:
           AZDO_PAT: ${{ secrets.AZDO_PAT }}
           AZDO_URL: ${{ secrets.AZDO_URL }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_URL: ${{ secrets.GH_URL }}
         run: |
           make cover
       - name: Send coverage to coverall

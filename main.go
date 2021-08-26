@@ -24,12 +24,15 @@ func run(args []string) error {
 	newGroup := newCommand.String("group", "", "stage the pipeline is currently in")
 	newApp := newCommand.String("app", "", "stage the pipeline is currently in")
 	newTag := newCommand.String("tag", "", "stage the pipeline is currently in")
+	newProviderType := newCommand.String("provider", "azdo", "git provider to use")
 
 	promoteCommand := flag.NewFlagSet("promote", flag.ExitOnError)
 	promoteToken := promoteCommand.String("token", "", "stage the pipeline is currently in")
+	promoteProviderType := promoteCommand.String("provider", "azdo", "git provider to use")
 
 	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
 	statusToken := statusCommand.String("token", "", "stage the pipeline is currently in")
+	statusProviderType := statusCommand.String("provider", "azdo", "git provider to use")
 
 	if len(args) < 2 {
 		return fmt.Errorf("new, promote or status subcommand is required")
@@ -57,19 +60,19 @@ func run(args []string) error {
 		if err != nil {
 			return err
 		}
-		message, commandErr = command.NewCommand(ctx, path, *newToken, *newGroup, *newApp, *newTag)
+		message, commandErr = command.NewCommand(ctx, path, *newProviderType, *newToken, *newGroup, *newApp, *newTag)
 	case "promote":
 		err := promoteCommand.Parse(args[2:])
 		if err != nil {
 			return err
 		}
-		message, commandErr = command.PromoteCommand(ctx, path, *promoteToken)
+		message, commandErr = command.PromoteCommand(ctx, *promoteProviderType, path, *promoteToken)
 	case "status":
 		err := statusCommand.Parse(args[2:])
 		if err != nil {
 			return err
 		}
-		message, commandErr = command.StatusCommand(ctx, path, *statusToken)
+		message, commandErr = command.StatusCommand(ctx, *statusProviderType, path, *statusToken)
 	default:
 		flag.PrintDefaults()
 		return fmt.Errorf("Unknown flag: %s", args[1])

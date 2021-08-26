@@ -9,12 +9,12 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-func StatusCommand(ctx context.Context, path, token string) (string, error) {
+func StatusCommand(ctx context.Context, providerType string, path, token string) (string, error) {
 	cfg, err := getConfig(path)
 	if err != nil {
 		return "", err
 	}
-	repo, err := getRepository(ctx, path, token)
+	repo, err := getRepository(ctx, providerType, path, token)
 	if err != nil {
 		return "", err
 	}
