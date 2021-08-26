@@ -122,17 +122,7 @@ func TestE2EGitHub(t *testing.T) {
 
 	require.Equal(t, "created promotions pull request", newCommandMsgDev)
 
-	// TODO: Remove when auto merge is enabled in GitHub
-	// START - Fake auto merge in GitHub
-	pathFake := testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "dev", app, tag)
-	repoDevFake := testGetRepository(t, pathFake)
-	revDevFake := testGetRepositoryHeadRevision(t, repoDevFake)
-
-	testMergePR(t, ctx, providerType, url, password, promoteBranchName, revDevFake)
-	// STOP - Fake auto merge in GitHub
-
 	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "dev", app, tag)
-
 	repoDev := testGetRepository(t, path)
 	revDev := testGetRepositoryHeadRevision(t, repoDev)
 
