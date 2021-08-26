@@ -115,13 +115,13 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 		pr, _, err = g.client.PullRequests.Create(ctx, g.owner, g.repo, createOpts)
 	case 1:
 		pr = (prsOnBranch)[0]
-		updateOpts := &github.PullRequestBranchUpdateOptions{}
-		_, _, err = g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, *pr.Number, updateOpts)
+		// updateOpts := &github.PullRequestBranchUpdateOptions{}
+		// _, _, err = g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, *pr.Number, updateOpts)
 
-		var githubError *github.AcceptedError
-		if errors.As(err, &githubError) {
-			err = nil
-		}
+		// var githubError *github.AcceptedError
+		// if errors.As(err, &githubError) {
+		// 	err = nil
+		// }
 	default:
 		return fmt.Errorf("received more than one PRs when listing: %d", len(prsOnBranch))
 	}
