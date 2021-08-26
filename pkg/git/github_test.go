@@ -249,9 +249,10 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			Expect(e).To(BeNil())
 		})
 
-		It("returns an error", func() {
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring("not in the correct state"))
+		It("merges the PR directly", func() {
+			Expect(err).To(BeNil())
+			_, e := provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
+			Expect(e.Error()).To(ContainSubstring("no PR found"))
 		})
 
 		When("and the repository has branch protection requiring passing statuses", func() {

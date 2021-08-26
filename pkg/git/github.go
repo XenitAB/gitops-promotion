@@ -140,6 +140,9 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 			PullRequestID: pr.GetNodeID(),
 		}
 		err = client.Mutate(ctx, &mutation, input, nil)
+		if err != nil && strings.Contains(err.Error(), "not in the correct state") {
+			err = g.MergePR(ctx, int(pr.GetNumber()), *pr.GetHead().SHA)
+		}
 	}
 	return err
 }
