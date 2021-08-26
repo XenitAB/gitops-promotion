@@ -5,19 +5,22 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/google/go-github/v37/github"
+	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
 
 // GitHubGITProvider ...
 type GitHubGITProvider struct {
-	client *github.Client
-	owner  string
-	repo   string
+	authClient *http.Client
+	client     *github.Client
+	owner      string
+	repo       string
 }
 
 // NewGitHubGITProvider ...
@@ -65,9 +68,10 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 	}
 
 	return &GitHubGITProvider{
-		client: client,
-		owner:  owner,
-		repo:   repo,
+		authClient: tc,
+		client:     client,
+		owner:      owner,
+		repo:       repo,
 	}, nil
 }
 
@@ -108,18 +112,34 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 			Base:                &targetName,
 			MaintainerCanModify: github.Bool(true),
 		}
-		_, _, err = g.client.PullRequests.Create(ctx, g.owner, g.repo, createOpts)
+		pr, _, err = g.client.PullRequests.Create(ctx, g.owner, g.repo, createOpts)
 	case 1:
 		pr = (prsOnBranch)[0]
-		updateOpts := &github.PullRequestBranchUpdateOptions{}
-		_, _, err = g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, *pr.Number, updateOpts)
-
-		var githubError *github.AcceptedError
-		if errors.As(err, &githubError) {
-			err = nil
-		}
+		pr.Title = &title
+		pr.Body = &description
+		pr.Base.Ref = &targetName
+		pr, _, err = g.client.PullRequests.Edit(ctx, g.owner, g.repo, *pr.Number, pr)
 	default:
 		return fmt.Errorf("received more than one PRs when listing: %d", len(prsOnBranch))
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if auto != (pr.GetAutoMerge() != nil) {
+		client := githubv4.NewClient(g.authClient)
+		var mutation struct {
+			EnablePullRequestAutoMerge struct {
+				PullRequest struct {
+					ID githubv4.ID
+				}
+			} `graphql:"enablePullRequestAutoMerge(input: $input)"`
+		}
+		input := githubv4.EnablePullRequestAutoMergeInput{
+			PullRequestID: pr.GetNodeID(),
+		}
+		err = client.Mutate(ctx, &mutation, input, nil)
 	}
 	return err
 }

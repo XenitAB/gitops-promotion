@@ -77,7 +77,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		}
 
 		if providerErr != nil {
-			Fail("Provider initialization failed")
+			Fail(fmt.Sprintf("Provider initialization failed: %s", providerErr))
 		}
 	})
 
@@ -215,6 +215,77 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			Expect(err).To(BeNil())
 		})
 	})
+
+	When("Creating/updating a PR with automerge", func() {
+		var repo *Repository
+
+		BeforeEach(func() {
+			auto = true
+			branchName = "with-automerge"
+
+			var e error
+			tmpDir, e = ioutil.TempDir("", "testing")
+			Expect(e).To(BeNil())
+			e = Clone(remoteURL, "pat", token, tmpDir, DefaultBranch)
+			Expect(e).To(BeNil())
+			repo, e = LoadRepository(ctx, tmpDir, providerTypeString, token)
+			Expect(e).To(BeNil())
+			e = repo.CreateBranch(branchName, false)
+			Expect(e).To(BeNil())
+			f, e := os.Create(fmt.Sprintf("%s/%s.txt", tmpDir, branchName))
+			Expect(e).To(BeNil())
+			_, e = f.WriteString(fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+			e = f.Close()
+			Expect(e).To(BeNil())
+			_, e = repo.CreateCommit(branchName, fmt.Sprintln(time.Now()))
+			Expect(e).To(BeNil())
+			e = repo.Push(branchName, true)
+			Expect(e).To(BeNil())
+		})
+
+		AfterEach(func() {
+			e := os.RemoveAll(tmpDir)
+			Expect(e).To(BeNil())
+		})
+
+		It("returns an error", func() {
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("not in the correct state"))
+		})
+
+		When("and the repository has branch protection requiring passing statuses", func() {
+			BeforeEach(func() {
+				_, _, err := provider.client.Repositories.UpdateBranchProtection(
+					ctx,
+					provider.owner,
+					provider.repo,
+					DefaultBranch,
+					&github.ProtectionRequest{
+						EnforceAdmins: true,
+						RequiredStatusChecks: &github.RequiredStatusChecks{
+							Strict:   true,
+							Contexts: []string{},
+						},
+					})
+				Expect(err).To(BeNil())
+			})
+
+			AfterEach(func() {
+				_, _, err := provider.client.Repositories.UpdateBranchProtection(
+					ctx,
+					provider.owner,
+					provider.repo,
+					DefaultBranch,
+					&github.ProtectionRequest{})
+				Expect(err).To(BeNil())
+			})
+
+			It("doesn't return an error", func() {
+				Expect(err).To(BeNil())
+			})
+		})
+	})
 })
 
 var _ = Describe("GitHubGITProvider GetStatus", func() {
@@ -230,7 +301,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 		}
 
 		if providerErr != nil {
-			Fail("Provider initialization failed")
+			Fail(fmt.Sprintf("Provider initialization failed: %s", providerErr))
 		}
 	})
 
@@ -347,7 +418,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 		}
 
 		if providerErr != nil {
-			Fail("Provider initialization failed")
+			Fail(fmt.Sprintf("Provider initialization failed: %s", providerErr))
 		}
 	})
 
@@ -464,7 +535,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 		}
 
 		if providerErr != nil {
-			Fail("Provider initialization failed")
+			Fail(fmt.Sprintf("Provider initialization failed: %s", providerErr))
 		}
 	})
 
@@ -569,7 +640,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 		}
 
 		if providerErr != nil {
-			Fail("Provider initialization failed")
+			Fail(fmt.Sprintf("Provider initialization failed: %s", providerErr))
 		}
 	})
 
