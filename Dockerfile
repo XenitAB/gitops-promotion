@@ -9,7 +9,7 @@ COPY main.go main.go
 COPY pkg/ pkg/
 RUN CGO_ENABLED=1 go build -o gitops-promotion main.go
 
-FROM alpine:3.14.0
+FROM alpine:3.14.2
 LABEL org.opencontainers.image.source="https://github.com/XenitAB/gitops-promotion"
 RUN apk add --no-cache ca-certificates=20191127-r5 tini~=0.19.0-r0 libgit2~=1.1 musl~=1.2
 COPY --from=builder /workspace/gitops-promotion /usr/local/bin/
