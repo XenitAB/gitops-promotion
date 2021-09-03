@@ -13,17 +13,6 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-func testGetEnvOrSkip(t *testing.T, key string) string {
-	t.Helper()
-
-	value := os.Getenv(key)
-	if value == "" {
-		t.Skipf("Skipping test since environment variable %q is not set", key)
-	}
-
-	return value
-}
-
 func testCloneRepositoryAndValidateTag(t *testing.T, url, username, password, branchName, group, env, app, tag string) string {
 	t.Helper()
 
