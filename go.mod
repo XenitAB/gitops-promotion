@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/andybalholm/brotli v1.0.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fluxcd/image-automation-controller v0.14.1
 	github.com/fluxcd/image-reflector-controller/api v0.10.0
 	github.com/fluxcd/source-controller v0.15.4
@@ -18,16 +19,16 @@ require (
 	github.com/google/go-containerregistry v0.5.0 // indirect
 	github.com/google/go-github/v37 v37.0.0
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.2.0 // indirect
+	github.com/google/uuid v1.2.0
 	github.com/jfrog/jfrog-client-go v0.26.1
 	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/libgit2/git2go/v31 v31.4.14
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.13.0
+	github.com/onsi/gomega v1.14.0
 	github.com/pierrec/lz4/v4 v4.1.6 // indirect
-	github.com/shurcooL/githubv4 v0.0.0-20210725200734-83ba7b4c9228 // indirect
+	github.com/shurcooL/githubv4 v0.0.0-20210725200734-83ba7b4c9228
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/ulikunitz/xz v0.5.10 // indirect

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/avast/retry-go"
 	"github.com/google/go-github/v37/github"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
@@ -197,7 +198,21 @@ func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) err
 		SHA: sha,
 	}
 
-	result, res, err := g.client.PullRequests.Merge(ctx, g.owner, g.repo, id, "", opts)
+	var result *github.PullRequestMergeResult
+	var res *github.Response
+	err := retry.Do(
+		func() error {
+			var err error
+			result, res, err = g.client.PullRequests.Merge(ctx, g.owner, g.repo, id, "", opts)
+			if err != nil && res.StatusCode == 405 {
+				updateOpts := &github.PullRequestBranchUpdateOptions{}
+				_, _, err = g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, id, updateOpts)
+			}
+			return err
+		},
+		retry.Attempts(5),
+		retry.LastErrorOnly(true),
+	)
 	if err != nil {
 		return err
 	}
@@ -229,20 +244,28 @@ func (g *GitHubGITProvider) GetPRWithBranch(ctx context.Context, source, target 
 		Base:  target,
 	}
 
-	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+	var prs []*github.PullRequest
+	err := retry.Do(
+		func() error {
+			openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+			if err != nil {
+				return err
+			}
+			for _, pr := range openPrs {
+				if source == *pr.Head.Ref {
+					prs = append(prs, pr)
+				}
+			}
+			if len(prs) == 0 {
+				return fmt.Errorf("no PR found for branches %q-%q", source, target)
+			}
+			return nil
+		},
+		retry.Attempts(5),
+		retry.LastErrorOnly(true),
+	)
 	if err != nil {
 		return PullRequest{}, err
-	}
-
-	var prs []*github.PullRequest
-	for _, pr := range openPrs {
-		if source == *pr.Head.Ref {
-			prs = append(prs, pr)
-		}
-	}
-
-	if len(prs) == 0 {
-		return PullRequest{}, fmt.Errorf("no PR found for branches %q-%q", source, target)
 	}
 
 	pr := prs[0]
@@ -255,22 +278,29 @@ func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha strin
 		State: "closed",
 	}
 
-	closedPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+	var prs []*github.PullRequest
+	err := retry.Do(
+		func() error {
+			closedPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
+			if err != nil {
+				return err
+			}
+			for _, pr := range closedPrs {
+				if sha == *pr.MergeCommitSHA {
+					prs = append(prs, pr)
+				}
+			}
+			if len(prs) == 0 {
+				return fmt.Errorf("no PR found for sha: %s", sha)
+			}
+			return nil
+		},
+		retry.Attempts(5),
+		retry.LastErrorOnly(true),
+	)
 	if err != nil {
 		return PullRequest{}, err
 	}
-
-	var prs []*github.PullRequest
-	for _, pr := range closedPrs {
-		if sha == *pr.MergeCommitSHA {
-			prs = append(prs, pr)
-		}
-	}
-
-	if len(prs) == 0 {
-		return PullRequest{}, fmt.Errorf("no PR found for sha: %s", sha)
-	}
-
 	pr := prs[0]
 
 	return newPR(pr.Number, pr.Title, pr.Body, nil)

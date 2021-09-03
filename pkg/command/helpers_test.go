@@ -3,12 +3,11 @@ package command
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"os"
 	"strings"
 	"testing"
-	"time"
 
+	"github.com/avast/retry-go"
 	git2go "github.com/libgit2/git2go/v31"
 	"github.com/stretchr/testify/require"
 	"github.com/xenitab/gitops-promotion/pkg/git"
@@ -29,34 +28,25 @@ func testCloneRepositoryAndValidateTag(t *testing.T, url, username, password, br
 	t.Helper()
 
 	manifestPath := fmt.Sprintf("%s/%s/%s.yaml", group, env, app)
-	for i := 1; i < 10; i++ {
-		path := t.TempDir()
+	var path string
+	err := retry.Do(func() error {
+		path = t.TempDir()
 		testCloneRepository(t, url, username, password, path, branchName)
 		fileName := fmt.Sprintf("%s/%s", path, manifestPath)
 
 		content, err := os.ReadFile(fileName)
-		require.NoError(t, err)
-
-		if strings.Contains(string(content), tag) {
-			return path
+		if err != nil {
+			return err
 		}
-
-		testSleepBackoff(t, i)
+		if strings.Contains(string(content), tag) {
+			return nil
+		}
+		return fmt.Errorf("Was not able to pull the latest commit where %q contained tag: %s", manifestPath, tag)
+	})
+	if err != nil {
+		require.NoError(t, err)
 	}
-
-	t.Fatalf("Was not able to pull the latest commit where %q contained tag: %s", manifestPath, tag)
-	return ""
-}
-
-func testSleepBackoff(t *testing.T, i int) {
-	t.Helper()
-
-	backoff := i * 200
-
-	// #nosec
-	timeSleep := time.Duration(backoff/2+rand.Intn(backoff)) * time.Millisecond
-
-	time.Sleep(timeSleep)
+	return path
 }
 
 func testCloneRepository(t *testing.T, url, username, password, path, branchName string) {
