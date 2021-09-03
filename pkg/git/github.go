@@ -207,6 +207,9 @@ func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) err
 			if err != nil && res.StatusCode == 405 {
 				updateOpts := &github.PullRequestBranchUpdateOptions{}
 				_, _, err = g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, id, updateOpts)
+				if err != nil {
+					return err
+				}
 			}
 			return err
 		},
@@ -256,7 +259,7 @@ func (g *GitHubGITProvider) GetPRWithBranch(ctx context.Context, source, target 
 					prs = append(prs, pr)
 				}
 			}
-			if len(prs) == 0 {
+			if len(prs) != 1 {
 				return fmt.Errorf("no PR found for branches %q-%q", source, target)
 			}
 			return nil
@@ -290,7 +293,7 @@ func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha strin
 					prs = append(prs, pr)
 				}
 			}
-			if len(prs) == 0 {
+			if len(prs) != 1 {
 				return fmt.Errorf("no PR found for sha: %s", sha)
 			}
 			return nil
