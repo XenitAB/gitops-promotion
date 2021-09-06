@@ -22,7 +22,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/jfrog/jfrog-client-go v0.26.1
 	github.com/klauspost/compress v1.12.2 // indirect
-	github.com/libgit2/git2go/v31 v31.4.14
+	github.com/libgit2/git2go/v31 v31.6.0
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.4
