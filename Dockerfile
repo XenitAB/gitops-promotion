@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine as builder
+FROM golang:1.17.0-alpine as builder
 RUN apk add --no-cache gcc=~10.3 pkgconfig=~1.7 libc-dev=~0.7 musl=~1.2 libgit2-dev=~1.1
 WORKDIR /workspace
 COPY go.mod go.mod
