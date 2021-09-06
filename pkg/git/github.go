@@ -206,9 +206,9 @@ func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) err
 			result, res, err = g.client.PullRequests.Merge(ctx, g.owner, g.repo, id, "", opts)
 			if err != nil && res.StatusCode == 405 {
 				updateOpts := &github.PullRequestBranchUpdateOptions{}
-				_, _, err = g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, id, updateOpts)
-				if err != nil {
-					return err
+				_, _, innerErr := g.client.PullRequests.UpdateBranch(ctx, g.owner, g.repo, id, updateOpts)
+				if innerErr != nil {
+					return innerErr
 				}
 			}
 			return err
