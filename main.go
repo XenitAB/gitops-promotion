@@ -11,41 +11,40 @@ import (
 )
 
 func main() {
-	err := run(os.Args)
+	message, err := run(os.Args)
+	if message != "" {
+		fmt.Println(message)
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Application failed with error: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string) error {
+func run(args []string) (string, error) {
+	defaultPath, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+
 	newCommand := flag.NewFlagSet("new", flag.ExitOnError)
 	newToken := newCommand.String("token", "", "stage the pipeline is currently in")
 	newGroup := newCommand.String("group", "", "stage the pipeline is currently in")
 	newApp := newCommand.String("app", "", "stage the pipeline is currently in")
 	newTag := newCommand.String("tag", "", "stage the pipeline is currently in")
+	newPath := newCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
 
 	promoteCommand := flag.NewFlagSet("promote", flag.ExitOnError)
 	promoteToken := promoteCommand.String("token", "", "stage the pipeline is currently in")
+	promotePath := promoteCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
 
 	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
 	statusToken := statusCommand.String("token", "", "stage the pipeline is currently in")
+	statusPath := statusCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
 
 	if len(args) < 2 {
-		return fmt.Errorf("new, promote or status subcommand is required")
+		return "", fmt.Errorf("new, promote or status subcommand is required")
 	}
-
-	path, err := setupFilesystem()
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		err := os.Remove(path)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to remove path %q, returned error: %s", path, err)
-		}
-	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -55,50 +54,56 @@ func run(args []string) error {
 	case "new":
 		err := newCommand.Parse(args[2:])
 		if err != nil {
-			return err
+			return "", err
 		}
-		message, commandErr = command.NewCommand(ctx, path, *newToken, *newGroup, *newApp, *newTag)
+		message, commandErr = withCopyOfWorkTree(newPath, func(workTreeCopy string) (string, error) {
+			return command.NewCommand(ctx, workTreeCopy, *newToken, *newGroup, *newApp, *newTag)
+		})
 	case "promote":
 		err := promoteCommand.Parse(args[2:])
 		if err != nil {
-			return err
+			return "", err
 		}
-		message, commandErr = command.PromoteCommand(ctx, path, *promoteToken)
+		message, commandErr = withCopyOfWorkTree(promotePath, func(workTreeCopy string) (string, error) {
+			return command.PromoteCommand(ctx, workTreeCopy, *promoteToken)
+		})
 	case "status":
 		err := statusCommand.Parse(args[2:])
 		if err != nil {
-			return err
+			return "", err
 		}
-		message, commandErr = command.StatusCommand(ctx, path, *statusToken)
+		message, commandErr = withCopyOfWorkTree(statusPath, func(workTreeCopy string) (string, error) {
+			return command.StatusCommand(ctx, workTreeCopy, *statusToken)
+		})
 	default:
 		flag.PrintDefaults()
-		return fmt.Errorf("Unknown flag: %s", args[1])
+		return "", fmt.Errorf("Unknown flag: %s", args[1])
 	}
 
 	if commandErr != nil {
-		return commandErr
+		return "", commandErr
 	}
 
-	fmt.Println(message)
-
-	return err
+	return message, err
 }
 
-func setupFilesystem() (string, error) {
-	curPath, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
+func withCopyOfWorkTree(sourcePath *string, work func(string) (string, error)) (string, error) {
 	tmpPath, err := os.MkdirTemp("", "gitops-promotion-")
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		err := os.Remove(tmpPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Unable to remove path %q, returned error: %s", tmpPath, err)
+		}
+	}()
 
-	err = fileutils.CopyDir(curPath, tmpPath, true, []string{})
+	err = fileutils.CopyDir(*sourcePath, tmpPath, true, []string{})
 	if err != nil {
 		return "", err
 	}
 
-	return tmpPath, nil
+	message, err := work(tmpPath)
+	return message, err
 }
