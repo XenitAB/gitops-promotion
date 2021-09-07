@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -57,12 +59,27 @@ var providers = []providerConfig{
 	},
 }
 
-func testRunCommand(t *testing.T, command string, args ...string) (string, error) {
+func testRunCommand(t *testing.T, path string, command string, args ...string) (string, error) {
 	t.Helper()
-	var cmdline = []string{"ze-binary", command}
-	cmdline = append(cmdline, args...)
-	message, err := run(cmdline)
-	return message, err
+	if image := os.Getenv("GITOPS_PROMOTION_IMAGE"); image != "" {
+		binary := "docker"
+		cmdline := []string{"run", "-v", fmt.Sprintf("%s:/workspace", path), image, command}
+		cmdline = append(cmdline, args...)
+		outputBuffer, err := exec.Command(binary, cmdline...).CombinedOutput()
+		output := strings.TrimSpace(string(outputBuffer))
+		if err != nil {
+			return "", fmt.Errorf("%q: %s", err, output)
+		}
+		return output, nil
+	} else {
+		if os.Getenv("CI") != "" {
+			return "", fmt.Errorf("CI is expected to test container. When Env var CI is set, please set GITOPS_PROMOTION_IMAGE.")
+		}
+		var cmdline = []string{"gitops-promotion", command, "-sourcedir", path}
+		cmdline = append(cmdline, args...)
+		message, err := run(cmdline)
+		return message, err
+	}
 }
 
 func TestProviderE2E(t *testing.T) {
@@ -89,8 +106,8 @@ func TestProviderE2E(t *testing.T) {
 			// Test DEV
 			newCommandMsgDev, err := testRunCommand(
 				t,
+				path,
 				"new",
-				"-sourcedir", path,
 				"-provider", p.providerType,
 				"-token", p.password,
 				"-group", group,
@@ -111,8 +128,8 @@ func TestProviderE2E(t *testing.T) {
 			// Test QA
 			promoteCommandMsgQa, err := testRunCommand(
 				t,
+				path,
 				"promote",
-				"-sourcedir", path,
 				"-provider", p.providerType,
 				"-token", p.password,
 			)
@@ -123,8 +140,8 @@ func TestProviderE2E(t *testing.T) {
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "qa", app, tag)
 			statusCommandMsgQa, err := testRunCommand(
 				t,
+				path,
 				"status",
-				"-sourcedir", path,
 				"-provider", p.providerType,
 				"-token", p.password,
 			)
@@ -147,8 +164,8 @@ func TestProviderE2E(t *testing.T) {
 			// Test PROD
 			promoteCommandMsgProd, err := testRunCommand(
 				t,
+				path,
 				"promote",
-				"-sourcedir", path,
 				"-provider", p.providerType,
 				"-token", p.password,
 			)
@@ -159,8 +176,8 @@ func TestProviderE2E(t *testing.T) {
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "prod", app, tag)
 			statusCommandMsgProd, err := testRunCommand(
 				t,
+				path,
 				"status",
-				"-sourcedir", path,
 				"-provider", p.providerType,
 				"-token", p.password,
 			)
