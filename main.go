@@ -96,7 +96,7 @@ func withCopyOfWorkTree(sourcePath *string, taskFn func(string) (string, error))
 		return "", err
 	}
 	defer func() {
-		err := os.Remove(tmpPath)
+		err := fileutils.RemovePath(tmpPath)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Unable to remove path %q, returned error: %s", tmpPath, err)
 		}
