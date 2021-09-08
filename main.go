@@ -77,7 +77,7 @@ func run(args []string) (string, error) {
 		})
 	default:
 		flag.PrintDefaults()
-		return "", fmt.Errorf("Unknown flag: %s", args[1])
+		return "", fmt.Errorf("unknown flag: %s", args[1])
 	}
 
 	if commandErr != nil {
@@ -87,7 +87,7 @@ func run(args []string) (string, error) {
 	return message, err
 }
 
-func withCopyOfWorkTree(sourcePath *string, work func(string) (string, error)) (string, error) {
+func withCopyOfWorkTree(sourcePath *string, taskFn func(string) (string, error)) (string, error) {
 	tmpPath, err := os.MkdirTemp("", "gitops-promotion-")
 	if err != nil {
 		return "", err
@@ -104,6 +104,6 @@ func withCopyOfWorkTree(sourcePath *string, work func(string) (string, error)) (
 		return "", err
 	}
 
-	message, err := work(tmpPath)
+	message, err := taskFn(tmpPath)
 	return message, err
 }
