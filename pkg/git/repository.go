@@ -147,7 +147,7 @@ func (g *Repository) Push(branchName string, force bool) error {
 	}
 
 	callback := git2go.RemoteCallbacks{
-		CredentialsCallback: func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
+		CredentialsCallback: func(url string, usernameFromURL string, allowedTypes git2go.CredentialType) (*git2go.Credential, error) {
 			cred, err := git2go.NewCredentialUserpassPlaintext(DefaultUsername, g.token)
 			if err != nil {
 				return nil, err
@@ -244,8 +244,8 @@ func Clone(url, username, password, path, branchName string) error {
 }
 
 func basicAuthMethod(username, password string) *scgit.Auth {
-	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
-		cred, err := git2go.NewCredUserpassPlaintext(username, password)
+	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredentialType) (*git2go.Credential, error) {
+		cred, err := git2go.NewCredentialUserpassPlaintext(username, password)
 		if err != nil {
 			return nil, err
 		}
