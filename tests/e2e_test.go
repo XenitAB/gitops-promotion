@@ -39,11 +39,13 @@ var providers = []providerConfig{
 	},
 }
 
-func runCommand(path string, verb string, args ...string) (string, error) {
+func testRunCommand(t *testing.T, path string, verb string, args ...string) (string, error) {
+	t.Helper()
 	if image := os.Getenv("GITOPS_PROMOTION_IMAGE"); image != "" {
 		binary := "docker"
 		cmdline := []string{"run", "-v", fmt.Sprintf("%s:/workspace", path), image, verb}
 		cmdline = append(cmdline, args...)
+		t.Logf("Running docker %q", cmdline)
 		outputBuffer, err := exec.Command(binary, cmdline...).CombinedOutput()
 		output := strings.TrimSpace(string(outputBuffer))
 		if err != nil {
@@ -83,7 +85,8 @@ func TestProviderE2E(t *testing.T) {
 			ctx := context.Background()
 
 			// Test DEV
-			newCommandMsgDev, err := runCommand(
+			newCommandMsgDev, err := testRunCommand(
+				t,
 				path,
 				"new",
 				"-provider", p.providerType,
@@ -104,7 +107,8 @@ func TestProviderE2E(t *testing.T) {
 			testSetStatus(t, ctx, providerType, revDev, group, "dev", p.url, p.password, true)
 
 			// Test QA
-			promoteCommandMsgQa, err := runCommand(
+			promoteCommandMsgQa, err := testRunCommand(
+				t,
 				path,
 				"promote",
 				"-provider", p.providerType,
@@ -115,7 +119,8 @@ func TestProviderE2E(t *testing.T) {
 			require.Equal(t, "created promotions pull request", promoteCommandMsgQa)
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "qa", app, tag)
-			statusCommandMsgQa, err := runCommand(
+			statusCommandMsgQa, err := testRunCommand(
+				t,
 				path,
 				"status",
 				"-provider", p.providerType,
@@ -138,7 +143,8 @@ func TestProviderE2E(t *testing.T) {
 			testSetStatus(t, ctx, providerType, revMergedQa, group, "qa", p.url, p.password, true)
 
 			// Test PROD
-			promoteCommandMsgProd, err := runCommand(
+			promoteCommandMsgProd, err := testRunCommand(
+				t,
 				path,
 				"promote",
 				"-provider", p.providerType,
@@ -149,7 +155,8 @@ func TestProviderE2E(t *testing.T) {
 			require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "prod", app, tag)
-			statusCommandMsgProd, err := runCommand(
+			statusCommandMsgProd, err := testRunCommand(
+				t,
 				path,
 				"status",
 				"-provider", p.providerType,
