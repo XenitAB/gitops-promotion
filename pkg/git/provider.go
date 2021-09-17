@@ -9,11 +9,13 @@ import (
 type ProviderType string
 
 const (
-	ProviderTypeAzdo ProviderType = "azdo"
+	ProviderTypeAzdo   ProviderType = "azdo"
+	ProviderTypeGitHub ProviderType = "github"
 )
 
 type GitProvider interface {
 	GetStatus(ctx context.Context, sha, group, env string) (Status, error)
+	SetStatus(ctx context.Context, sha string, group string, env string, succeeded bool) error
 	CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) error
 	GetPRWithBranch(ctx context.Context, source, target string) (PullRequest, error)
 	GetPRThatCausedCommit(ctx context.Context, sha string) (PullRequest, error)
@@ -24,6 +26,8 @@ func NewGitProvider(ctx context.Context, providerType ProviderType, remoteURL, t
 	switch providerType {
 	case ProviderTypeAzdo:
 		return NewAzdoGITProvider(ctx, remoteURL, token)
+	case ProviderTypeGitHub:
+		return NewGitHubGITProvider(ctx, remoteURL, token)
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
 	}
@@ -31,8 +35,10 @@ func NewGitProvider(ctx context.Context, providerType ProviderType, remoteURL, t
 
 func StringToProviderType(p string) (ProviderType, error) {
 	switch strings.ToLower(p) {
-	case "azdo":
+	case string(ProviderTypeAzdo):
 		return ProviderTypeAzdo, nil
+	case string(ProviderTypeGitHub):
+		return ProviderTypeGitHub, nil
 	default:
 		return "", fmt.Errorf("Unknown provider selected: %s", p)
 	}

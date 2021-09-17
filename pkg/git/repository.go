@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	scgit "github.com/fluxcd/source-controller/pkg/git"
 	git2go "github.com/libgit2/git2go/v31"
 )
 
@@ -17,7 +18,7 @@ type Repository struct {
 }
 
 // LoadRepository loads a local git repository.
-func LoadRepository(ctx context.Context, path string, providerType ProviderType, token string) (*Repository, error) {
+func LoadRepository(ctx context.Context, path string, providerTypeString string, token string) (*Repository, error) {
 	localRepo, err := git2go.OpenRepository(path)
 	if err != nil {
 		return &Repository{}, fmt.Errorf("could not open repository: %w", err)
@@ -26,6 +27,11 @@ func LoadRepository(ctx context.Context, path string, providerType ProviderType,
 	remote, err := localRepo.Remotes.Lookup(DefaultRemote)
 	if err != nil {
 		return nil, fmt.Errorf("could not get remote: %w", err)
+	}
+
+	providerType, err := StringToProviderType(providerTypeString)
+	if err != nil {
+		return nil, fmt.Errorf("could not get providerType: %w", err)
 	}
 
 	provider, err := NewGitProvider(ctx, providerType, remote.Url(), token)
@@ -134,7 +140,7 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 }
 
 // Push pushes the defined ref to remote.
-func (g *Repository) Push(branchName string) error {
+func (g *Repository) Push(branchName string, force bool) error {
 	remote, err := g.gitRepository.Remotes.Lookup(DefaultRemote)
 	if err != nil {
 		return fmt.Errorf("could not find remote %q: %w", DefaultRemote, err)
@@ -149,7 +155,13 @@ func (g *Repository) Push(branchName string) error {
 			return cred, nil
 		},
 	}
-	branches := []string{fmt.Sprintf("+refs/heads/%s", branchName)}
+
+	forceFlag := "+"
+	if !force {
+		forceFlag = ""
+	}
+
+	branches := []string{fmt.Sprintf("%srefs/heads/%s", forceFlag, branchName)}
 	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: callback})
 	if err != nil {
 		return fmt.Errorf("failed pushing branches %s: %w", branches, err)
@@ -213,4 +225,33 @@ func (g *Repository) GetPRThatCausedCurrentCommit(ctx context.Context) (PullRequ
 	}
 	pr.State = state
 	return pr, err
+}
+
+func Clone(url, username, password, path, branchName string) error {
+	auth := basicAuthMethod(username, password)
+
+	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
+		FetchOptions: &git2go.FetchOptions{
+			DownloadTags: git2go.DownloadTagsNone,
+			RemoteCallbacks: git2go.RemoteCallbacks{
+				CredentialsCallback: auth.CredCallback,
+			},
+		},
+		CheckoutBranch: branchName,
+	})
+
+	return err
+}
+
+func basicAuthMethod(username, password string) *scgit.Auth {
+	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredType) (*git2go.Cred, error) {
+		cred, err := git2go.NewCredUserpassPlaintext(username, password)
+		if err != nil {
+			return nil, err
+		}
+
+		return cred, nil
+	}
+
+	return &scgit.Auth{CredCallback: credCallback}
 }

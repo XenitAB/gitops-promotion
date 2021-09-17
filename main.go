@@ -33,14 +33,17 @@ func run(args []string) (string, error) {
 	newApp := newCommand.String("app", "", "stage the pipeline is currently in")
 	newTag := newCommand.String("tag", "", "stage the pipeline is currently in")
 	newPath := newCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
+	newProviderType := newCommand.String("provider", "azdo", "git provider to use")
 
 	promoteCommand := flag.NewFlagSet("promote", flag.ExitOnError)
 	promoteToken := promoteCommand.String("token", "", "stage the pipeline is currently in")
 	promotePath := promoteCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
+	promoteProviderType := promoteCommand.String("provider", "azdo", "git provider to use")
 
 	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
 	statusToken := statusCommand.String("token", "", "stage the pipeline is currently in")
 	statusPath := statusCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
+	statusProviderType := statusCommand.String("provider", "azdo", "git provider to use")
 
 	if len(args) < 2 {
 		return "", fmt.Errorf("new, promote or status subcommand is required")
@@ -57,7 +60,7 @@ func run(args []string) (string, error) {
 			return "", err
 		}
 		message, commandErr = withCopyOfWorkTree(newPath, func(workTreeCopy string) (string, error) {
-			return command.NewCommand(ctx, workTreeCopy, *newToken, *newGroup, *newApp, *newTag)
+			return command.NewCommand(ctx, *newProviderType, workTreeCopy, *newToken, *newGroup, *newApp, *newTag)
 		})
 	case "promote":
 		err := promoteCommand.Parse(args[2:])
@@ -65,7 +68,7 @@ func run(args []string) (string, error) {
 			return "", err
 		}
 		message, commandErr = withCopyOfWorkTree(promotePath, func(workTreeCopy string) (string, error) {
-			return command.PromoteCommand(ctx, workTreeCopy, *promoteToken)
+			return command.PromoteCommand(ctx, *promoteProviderType, workTreeCopy, *promoteToken)
 		})
 	case "status":
 		err := statusCommand.Parse(args[2:])
@@ -73,7 +76,7 @@ func run(args []string) (string, error) {
 			return "", err
 		}
 		message, commandErr = withCopyOfWorkTree(statusPath, func(workTreeCopy string) (string, error) {
-			return command.StatusCommand(ctx, workTreeCopy, *statusToken)
+			return command.StatusCommand(ctx, *statusProviderType, workTreeCopy, *statusToken)
 		})
 	default:
 		flag.PrintDefaults()

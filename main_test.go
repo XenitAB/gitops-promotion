@@ -14,6 +14,8 @@ func TestCIRequirements(t *testing.T) {
 	reqEnvVars := []string{
 		"AZDO_URL",
 		"AZDO_PAT",
+		"GITHUB_URL",
+		"GITHUB_TOKEN",
 	}
 
 	for _, envVar := range reqEnvVars {

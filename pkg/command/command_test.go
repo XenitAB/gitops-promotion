@@ -3,87 +3,120 @@ package command
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-func TestE2EAzureDevOps(t *testing.T) {
-	username := "gitops-promotion"
-	password := testGetEnvOrSkip(t, "AZDO_PAT")
-	url := testGetEnvOrSkip(t, "AZDO_URL")
-	defaultBranch := "main"
-	path := t.TempDir()
+type providerConfig struct {
+	providerType  string
+	username      string
+	password      string
+	url           string
+	defaultBranch string
+}
 
-	testCloneRepository(t, url, username, password, path, defaultBranch)
+var providers = []providerConfig{
+	{
+		providerType:  "azdo",
+		username:      "gitops-promotion",
+		password:      os.Getenv("AZDO_PAT"),
+		url:           os.Getenv("AZDO_URL"),
+		defaultBranch: "main",
+	},
+	{
+		providerType:  "github",
+		username:      "gitops-promotion",
+		password:      os.Getenv("GITHUB_TOKEN"),
+		url:           os.Getenv("GITHUB_URL"),
+		defaultBranch: "main",
+	},
+}
 
-	now := time.Now()
-	tag := now.Format("20060102150405")
-	group := "testgroup"
-	app := "testapp"
+func TestProviderE2E(t *testing.T) {
+	for _, p := range providers {
+		t.Run(p.providerType, func(t *testing.T) {
+			if p.url == "" || p.password == "" {
+				t.Skipf("Skipping test since url or password env var is not set")
+			}
+			path := t.TempDir()
+			providerType, err := git.StringToProviderType(p.providerType)
+			require.NoError(t, err)
 
-	ctx := context.Background()
+			testCloneRepository(t, p.url, p.username, p.password, path, p.defaultBranch)
 
-	// Test DEV
-	newCommandMsgDev, err := NewCommand(ctx, path, password, group, app, tag)
-	require.NoError(t, err)
+			now := time.Now()
+			tag := now.Format("20060102150405")
+			group := "testgroup"
+			app := "testapp"
 
-	require.Equal(t, "created promotions pull request", newCommandMsgDev)
+			promoteBranchName := fmt.Sprintf("promote/%s-%s", group, app)
 
-	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "dev", app, tag)
+			ctx := context.Background()
 
-	repoDev := testGetRepository(t, path)
-	revDev := testGetRepositoryHeadRevision(t, repoDev)
+			// Test DEV
+			newCommandMsgDev, err := NewCommand(ctx, p.providerType, path, p.password, group, app, tag)
+			require.NoError(t, err)
 
-	testSetAzureDevOpsStatus(t, revDev, group, "dev", url, password, true)
+			require.Equal(t, "created promotions pull request", newCommandMsgDev)
 
-	// Test QA
-	promoteCommandMsgQa, err := PromoteCommand(ctx, path, password)
-	require.NoError(t, err)
+			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "dev", app, tag)
 
-	require.Equal(t, "created promotions pull request", promoteCommandMsgQa)
+			repoDev := testGetRepository(t, path)
+			revDev := testGetRepositoryHeadRevision(t, repoDev)
 
-	promoteBranchName := fmt.Sprintf("promote/%s-%s", group, app)
-	path = testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "qa", app, tag)
-	statusCommandMsgQa, err := StatusCommand(ctx, path, password)
-	require.NoError(t, err)
+			testSetStatus(t, ctx, providerType, revDev, group, "dev", p.url, p.password, true)
 
-	require.Equal(t, "status check has succeed", statusCommandMsgQa)
+			// Test QA
+			promoteCommandMsgQa, err := PromoteCommand(ctx, p.providerType, path, p.password)
+			require.NoError(t, err)
 
-	repoQa := testGetRepository(t, path)
-	revQa := testGetRepositoryHeadRevision(t, repoQa)
+			require.Equal(t, "created promotions pull request", promoteCommandMsgQa)
 
-	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revQa)
+			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "qa", app, tag)
+			statusCommandMsgQa, err := StatusCommand(ctx, p.providerType, path, p.password)
+			require.NoError(t, err)
 
-	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "qa", app, tag)
+			require.Equal(t, "status check has succeed", statusCommandMsgQa)
 
-	repoMergedQa := testGetRepository(t, path)
-	revMergedQa := testGetRepositoryHeadRevision(t, repoMergedQa)
+			repoQa := testGetRepository(t, path)
+			revQa := testGetRepositoryHeadRevision(t, repoQa)
 
-	testSetAzureDevOpsStatus(t, revMergedQa, group, "qa", url, password, true)
+			testMergePR(t, ctx, providerType, p.url, p.password, promoteBranchName, revQa)
 
-	// Test PROD
-	promoteCommandMsgProd, err := PromoteCommand(ctx, path, password)
-	require.NoError(t, err)
+			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "qa", app, tag)
 
-	require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
+			repoMergedQa := testGetRepository(t, path)
+			revMergedQa := testGetRepositoryHeadRevision(t, repoMergedQa)
 
-	path = testCloneRepositoryAndValidateTag(t, url, username, password, promoteBranchName, group, "prod", app, tag)
-	statusCommandMsgProd, err := StatusCommand(ctx, path, password)
-	require.NoError(t, err)
+			testSetStatus(t, ctx, providerType, revMergedQa, group, "qa", p.url, p.password, true)
 
-	require.Equal(t, "status check has succeed", statusCommandMsgProd)
+			// Test PROD
+			promoteCommandMsgProd, err := PromoteCommand(ctx, p.providerType, path, p.password)
+			require.NoError(t, err)
 
-	repoProd := testGetRepository(t, path)
-	revProd := testGetRepositoryHeadRevision(t, repoProd)
+			require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
 
-	testMergeAzureDevOpsPR(t, ctx, url, password, promoteBranchName, revProd)
+			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "prod", app, tag)
+			statusCommandMsgProd, err := StatusCommand(ctx, p.providerType, path, p.password)
+			require.NoError(t, err)
 
-	path = testCloneRepositoryAndValidateTag(t, url, username, password, defaultBranch, group, "prod", app, tag)
+			require.Equal(t, "status check has succeed", statusCommandMsgProd)
 
-	repoMergedProd := testGetRepository(t, path)
-	revMergedProd := testGetRepositoryHeadRevision(t, repoMergedProd)
+			repoProd := testGetRepository(t, path)
+			revProd := testGetRepositoryHeadRevision(t, repoProd)
 
-	testSetAzureDevOpsStatus(t, revMergedProd, group, "prod", url, password, true)
+			testMergePR(t, ctx, providerType, p.url, p.password, promoteBranchName, revProd)
+
+			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "prod", app, tag)
+
+			repoMergedProd := testGetRepository(t, path)
+			revMergedProd := testGetRepositoryHeadRevision(t, repoMergedProd)
+
+			testSetStatus(t, ctx, providerType, revMergedProd, group, "prod", p.url, p.password, true)
+		})
+	}
 }
