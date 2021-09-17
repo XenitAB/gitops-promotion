@@ -57,7 +57,8 @@ var providers = []providerConfig{
 	},
 }
 
-func runCommand(command string, args ...string) (string, error) {
+func testRunCommand(t *testing.T, command string, args ...string) (string, error) {
+	t.Helper()
 	var cmdline = []string{"ze-binary", command}
 	cmdline = append(cmdline, args...)
 	message, err := run(cmdline)
@@ -86,7 +87,8 @@ func TestProviderE2E(t *testing.T) {
 			ctx := context.Background()
 
 			// Test DEV
-			newCommandMsgDev, err := runCommand(
+			newCommandMsgDev, err := testRunCommand(
+				t,
 				"new",
 				"-sourcedir", path,
 				"-provider", p.providerType,
@@ -107,7 +109,8 @@ func TestProviderE2E(t *testing.T) {
 			testSetStatus(t, ctx, providerType, revDev, group, "dev", p.url, p.password, true)
 
 			// Test QA
-			promoteCommandMsgQa, err := runCommand(
+			promoteCommandMsgQa, err := testRunCommand(
+				t,
 				"promote",
 				"-sourcedir", path,
 				"-provider", p.providerType,
@@ -118,7 +121,8 @@ func TestProviderE2E(t *testing.T) {
 			require.Equal(t, "created promotions pull request", promoteCommandMsgQa)
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "qa", app, tag)
-			statusCommandMsgQa, err := runCommand(
+			statusCommandMsgQa, err := testRunCommand(
+				t,
 				"status",
 				"-sourcedir", path,
 				"-provider", p.providerType,
@@ -141,7 +145,8 @@ func TestProviderE2E(t *testing.T) {
 			testSetStatus(t, ctx, providerType, revMergedQa, group, "qa", p.url, p.password, true)
 
 			// Test PROD
-			promoteCommandMsgProd, err := runCommand(
+			promoteCommandMsgProd, err := testRunCommand(
+				t,
 				"promote",
 				"-sourcedir", path,
 				"-provider", p.providerType,
@@ -152,7 +157,8 @@ func TestProviderE2E(t *testing.T) {
 			require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "prod", app, tag)
-			statusCommandMsgProd, err := runCommand(
+			statusCommandMsgProd, err := testRunCommand(
+				t,
 				"status",
 				"-sourcedir", path,
 				"-provider", p.providerType,
