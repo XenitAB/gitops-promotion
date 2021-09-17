@@ -142,6 +142,11 @@ jobs:
           sudo cmake --build . --target install
           sudo ldconfig
       - name: Run integration tests
+        env:
+          AZDO_PAT: ${{ secrets.AZDO_PAT }}
+          AZDO_URL: ${{ secrets.AZDO_URL }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_URL: ${{ secrets.GH_URL }}
         run: |
           make verify GITOPS_PROMOTION_IMAGE=${{ env.NAME }}:${{ steps.prep.outputs.VERSION }}
       - name: Run Trivy vulnerability scanner
