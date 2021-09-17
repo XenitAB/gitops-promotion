@@ -1,5 +1,5 @@
 TAG = dev
-IMG ?= ghcr.io/xenitab/gitops-promotion:$(TAG)
+GITOPS_PROMOTION_IMAGE ?= ghcr.io/xenitab/gitops-promotion:$(TAG)
 TEST_ENV_FILE = tmp/test_env
 
 ifneq (,$(wildcard $(TEST_ENV_FILE)))
@@ -29,8 +29,11 @@ test: fmt vet
 
 cover:
 	mkdir -p tmp
-	go test -timeout 5m -coverpkg=./... -coverprofile=tmp/coverage.out ./...
+	go test -timeout 5m -coverpkg=./pkg/... -coverprofile=tmp/coverage.out ./pkg/...
 	go tool cover -html=tmp/coverage.out
 
 docker-build:
-	docker build -t ${IMG} .
+	docker build -t ${GITOPS_PROMOTION_IMAGE} .
+
+verify:
+	go test -timeout 2m -v ./tests/...

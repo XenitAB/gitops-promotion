@@ -127,6 +127,28 @@ jobs:
       - name: Build and load (current arch)
         run: |
           docker buildx build --load -t ${{ env.NAME }}:${{ steps.prep.outputs.VERSION }} .
+      - name: Setup go
+        uses: actions/setup-go@v2
+        with:
+          go-version: "1.16"
+      - name: Install libgit2
+        run: |
+          cd /tmp
+          git clone https://github.com/libgit2/libgit2.git
+          cd libgit2
+          git checkout maint/v1.1
+          mkdir build && cd build
+          cmake ..
+          sudo cmake --build . --target install
+          sudo ldconfig
+      - name: Run integration tests
+        env:
+          AZDO_PAT: ${{ secrets.AZDO_PAT }}
+          AZDO_URL: ${{ secrets.AZDO_URL }}
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_URL: ${{ secrets.GH_URL }}
+        run: |
+          make verify GITOPS_PROMOTION_IMAGE=${{ env.NAME }}:${{ steps.prep.outputs.VERSION }}
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
