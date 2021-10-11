@@ -20,7 +20,7 @@ require (
 	github.com/google/go-github/v37 v37.0.0
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0
-	github.com/jfrog/jfrog-client-go v0.26.1
+	github.com/jfrog/jfrog-client-go v0.27.0
 	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/libgit2/git2go/v31 v31.6.0
 	github.com/mailru/easyjson v0.7.7 // indirect
