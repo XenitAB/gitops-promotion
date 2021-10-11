@@ -8,7 +8,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fluxcd/image-automation-controller v0.14.1
 	github.com/fluxcd/image-reflector-controller/api v0.11.1
-	github.com/fluxcd/source-controller v0.15.4
+	github.com/fluxcd/source-controller v0.16.0
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect
 	github.com/go-openapi/errors v0.20.0 // indirect
@@ -22,7 +22,7 @@ require (
 	github.com/google/uuid v1.2.0
 	github.com/jfrog/jfrog-client-go v0.26.1
 	github.com/klauspost/compress v1.12.2 // indirect
-	github.com/libgit2/git2go/v31 v31.6.0
+	github.com/libgit2/git2go/v31 v31.6.1
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.4
