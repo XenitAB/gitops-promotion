@@ -1,0 +1,30 @@
+name: GitOps Promotion
+author: https://github.com/XenitAB
+description: |
+  A tool to do automatic promotion with a GitOps workflow.
+inputs:
+  action:
+    description: Action to perform; one of "new" or "promote".
+    required: true
+  token:
+    description: Access token (PAT) to git provider. You probably want secrets.GITHUB_TOKEN
+    required: true
+  group:
+    description: Main application group; relevant when action is "new"
+    required: false
+  app:
+    description: Name of the application; relevant when action is "new"
+    required: false
+  tag:
+    description: Application version/tag to set; relevant when action is "new"
+    requires: false
+runs:
+  using: docker
+  image: docker://ghcr.io/xenitab/gitops-promotion:v0.0.7
+  entrypoint: /usr/local/bin/action-entrypoint.sh
+  env:
+    ACTION: ${{ inputs.action }}
+    TOKEN: ${{ inputs.token }}
+    GROUP: ${{ inputs.group }}
+    APP: ${{ inputs.app }}
+    TAG: ${{ inputs.tag }}
