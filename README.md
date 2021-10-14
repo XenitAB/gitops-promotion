@@ -12,15 +12,15 @@ Depending on which container registry you are using, you may be able to set up t
       - name: Notify gitops-promotion workflow
         uses: peter-evans/repository-dispatch@v1
         with:
-          token: ${{ secrets.IAC_REPO_TOKEN }}
-          repository: my-org/my-iac
+          token: ${{ secrets.GITOPS_REPO_TOKEN }}
+          repository: my-org/my-gitops
           event-type: image-push
           client-payload: |
             {
               "tag": "${{ github.sha }}"
             }
 ```
-The `repository` parameter holds the repository where you want to run `gitops-promotion`. The normal `${{ secrets.GITHUB_TOKEN }}` only has access to the local repository running in which the workflow is running, so we need to set up and pass an access token (IAC_REPO_TOKEN) that has access to that repository.
+The `repository` parameter holds the repository where you want to run `gitops-promotion`. The normal `${{ secrets.GITHUB_TOKEN }}` only has access to the local repository running in which the workflow is running, so we need to set up and pass an access token (GITOPS_REPO_TOKEN) that has access to that repository.
 
 Here is a complete example GitHub workflow for pushing a containerized app to GitHub Container Registry:
 
@@ -52,8 +52,8 @@ jobs:
       - name: Notify gitops-promotion workflow
         uses: peter-evans/repository-dispatch@v1
         with:
-          token: ${{ secrets.IAC_REPO_TOKEN }}
-          repository: ${{ github.repository_owner }}/my-iac
+          token: ${{ secrets.GITOPS_REPO_TOKEN }}
+          repository: ${{ github.repository_owner }}/my-gitops
           event-type: image-push
           client-payload: |
             {
@@ -61,7 +61,7 @@ jobs:
             }
 ```
 
-In your infrastructure-as-code repository, you can react to `repository-dispatch` events and trigger promotion:
+In your gitops repository, you can react to `repository-dispatch` events and trigger promotion:
 
 ```yaml
 on:
