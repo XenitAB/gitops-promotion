@@ -34,20 +34,20 @@ func Run(args []string) (string, error) {
 	}
 
 	newCommand := flag.NewFlagSet("new", flag.ExitOnError)
-	newToken := newCommand.String("token", "", "stage the pipeline is currently in")
-	newGroup := newCommand.String("group", "", "stage the pipeline is currently in")
-	newApp := newCommand.String("app", "", "stage the pipeline is currently in")
-	newTag := newCommand.String("tag", "", "stage the pipeline is currently in")
+	newToken := newCommand.String("token", "", "Access token (PAT) to git provider")
+	newGroup := newCommand.String("group", "", "Main application group")
+	newApp := newCommand.String("app", "", "Name of the application")
+	newTag := newCommand.String("tag", "", "Application version/tag to set")
 	newProviderType := newCommand.String("provider", "azdo", "git provider to use")
 	newPath := newCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
 
 	promoteCommand := flag.NewFlagSet("promote", flag.ExitOnError)
-	promoteToken := promoteCommand.String("token", "", "stage the pipeline is currently in")
+	promoteToken := promoteCommand.String("token", "", "Access token (PAT) to git provider")
 	promoteProviderType := promoteCommand.String("provider", "azdo", "git provider to use")
 	promotePath := promoteCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
 
 	statusCommand := flag.NewFlagSet("status", flag.ExitOnError)
-	statusToken := statusCommand.String("token", "", "stage the pipeline is currently in")
+	statusToken := statusCommand.String("token", "", "Access token (PAT) to git provider")
 	statusProviderType := statusCommand.String("provider", "azdo", "git provider to use")
 	statusPath := statusCommand.String("sourcedir", defaultPath, "Source working tree to operate on")
 

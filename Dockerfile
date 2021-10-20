@@ -14,5 +14,6 @@ LABEL org.opencontainers.image.source="https://github.com/XenitAB/gitops-promoti
 RUN apk upgrade --no-cache && \
     apk add --no-cache ca-certificates tini=~0.19 libgit2=~1.1 musl=~1.2
 COPY --from=builder /workspace/gitops-promotion /usr/local/bin/
+COPY ./action-entrypoint.sh /usr/local/bin/
 WORKDIR /workspace
 ENTRYPOINT [ "/sbin/tini", "--", "gitops-promotion" ]
