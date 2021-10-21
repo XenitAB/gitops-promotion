@@ -77,7 +77,7 @@ jobs:
         with:
           # gitops-promotion currently needs access to history
           fetch-depth: 0
-      - uses: xenitab/gitops-promotion@v1
+      - uses: xenitab/gitops-promotion@v0.0.8
         with:
           action: new
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -102,7 +102,7 @@ jobs:
         with:
           # gitops-promotion currently needs access to history
           fetch-depth: 0
-      - uses: xenitab/gitops-promotion@v1
+      - uses: xenitab/gitops-promotion@v0.0.8
         with:
           action: promote
           token: ${{ secrets.GITHUB_TOKEN }}
