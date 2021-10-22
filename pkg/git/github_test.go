@@ -103,11 +103,6 @@ var _ = Describe("NewGitHubGITProvider", func() {
 		Expect(err).To(MatchError("host does not start with https://github.com: https://foo.bar"))
 	})
 
-	It("returns error when creating with fake token", func() {
-		_, err = NewGitHubGITProvider(ctx, "https://github.com/org/repo", "foo")
-		Expect(err).To(MatchError("unable to authenticate using token"))
-	})
-
 	It("is successfully created when creating with correct token", func() {
 		var provider *GitHubGITProvider
 		remoteURL := os.Getenv("GITHUB_URL")
