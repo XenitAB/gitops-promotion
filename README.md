@@ -108,6 +108,28 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+In order to block automatic promotion, you can add a status workflow:
+
+```yaml
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  prev-env-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          # gitops-promotion currently needs access to history
+          fetch-depth: 0
+      - uses: xenitab/gitops-promotion@v0.0.8
+        with:
+          action: status
+          token: ${{ secrets.GITHUB_TOKEN }}
+```
+
 ## Building
 
 You will need pkg-config and libgit2, please install it from your package manager.
