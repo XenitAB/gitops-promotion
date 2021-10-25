@@ -22,7 +22,7 @@ func StatusCommand(ctx context.Context, providerType string, path, token string)
 	// If branch does not contain promote it was manual, return early
 	branchName, err := repo.GetBranchName()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to find current branch: %w", err)
 	}
 	if !strings.HasPrefix(branchName, git.PromoteBranchPrefix) {
 		return "Promotion was manual, skipping check", nil
