@@ -49,10 +49,10 @@ Usage of new:
 
 The `new` command goes through this process:
 
-   1. creates a new branch `promote/<group>-<app>` (or resets it if it already exists),
-   1. updates the image tag for the app manifest in the first environment listed in the config file to the newly released container image (see below for more info how this works),
-   1. creates an auto-merging pull request,
-   1. Assuming the pull request has no failing checks, it is automatically merged into main, where a service such as Flux can apply it to the first environment.
+1.  creates a new branch `promote/<group>-<app>` (or resets it if it already exists),
+1.  updates the image tag for the app manifest in the first environment listed in the config file to the newly released container image (see below for more info how this works),
+1.  creates an auto-merging pull request,
+1.  Assuming the pull request has no failing checks, it is automatically merged into main, where a service such as Flux can apply it to the first environment.
 
 ### gitops-promotion promote
 
@@ -158,11 +158,11 @@ environments:
     auto: false
 ```
 
-| property            | usage                                                                               |
-| ------------------- | ----------------------------------------------------------------------------------- |
+| property            | usage                                                                                                                                              |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | prflow              | `per-app` means later changes will "reset" the single PR for that app, while `per-env` will upsert a PR that app's PR for a particular environment |
-| environments[].auto | Whether pull requests for this environment auto-merge or not                        |
-| environments[].name | The name for this environment. Must correspond to a directory present in all groups |
+| environments[].auto | Whether pull requests for this environment auto-merge or not                                                                                       |
+| environments[].name | The name for this environment. Must correspond to a directory present in all groups                                                                |
 
 ## Using with Azure Devops
 
@@ -178,9 +178,10 @@ gitops-promotion makes use of [PR auto-merge](https://docs.github.com/en/pull-re
 
 1. In repository settings, turn on "Allow auto-merge"
 1. Set up a branch protection rule for your "main" branch:
-  - "Require a pull request before merging"
-  - "Require status checks to pass"
-  - Add the workflow for the `status` commend to "Status checks that are required". In the example below, you would enter "prev-env-status". Bizarrely, the UI will not allow you to enter the name, so you may have to trigger a run once so you can use the search interface.
+
+- "Require a pull request before merging"
+- "Require status checks to pass"
+- Add the workflow for the `status` commend to "Status checks that are required". In the example below, you would enter "prev-env-status". Bizarrely, the UI will not allow you to enter the name, so you may have to trigger a run once so you can use the search interface.
 
 You can verify that your settings are correct by manually creating a pull request and verify that the button says "Enable auto-merge".
 
@@ -191,18 +192,18 @@ gitops-promotion is available as a Github Action.
 Depending on which container registry you are using, you may be able to set up triggers that activates your gitops-promotion workflow. If this is not the case, you can use GitHub [repository_dispatch](https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch) events. These allow GitHub actions on one repository to notify another repository. Use the excellent [repository-dispatch GitHub Action](https://github.com/marketplace/actions/repository-dispatch) for readable YAML. You would add a step at the end of your container-building workflow that looks something like this:
 
 ```yaml
-      - name: Notify gitops-promotion workflow
-        uses: peter-evans/repository-dispatch@v1
-        with:
-          token: ${{ secrets.GITOPS_REPO_TOKEN }}
-          repository: my-org/my-gitops
-          event-type: image-push
-          client-payload: |
-            {
-              "group": "apps",
-              "app": "my-app",
-              "tag": "${{ github.sha }}"
-            }
+- name: Notify gitops-promotion workflow
+  uses: peter-evans/repository-dispatch@v1
+  with:
+    token: ${{ secrets.GITOPS_REPO_TOKEN }}
+    repository: my-org/my-gitops
+    event-type: image-push
+    client-payload: |
+      {
+        "group": "apps",
+        "app": "my-app",
+        "tag": "${{ github.sha }}"
+      }
 ```
 
 The `repository` parameter holds the repository where you want to run `gitops-promotion`. The normal `${{ secrets.GITHUB_TOKEN }}` only has access to the local repository running in which the workflow is running, so we need to set up and pass an access token (GITOPS_REPO_TOKEN) that has access to that repository.
@@ -266,8 +267,8 @@ jobs:
           fetch-depth: 0
       - uses: xenitab/gitops-promotion@v0.1.0
         with:
-          action: new
           token: ${{ secrets.GITHUB_TOKEN }}
+          action: new
           group: ${{ github.event.client_payload.group }}
           app: ${{ github.event.client_payload.app }}
           tag: ${{ github.event.client_payload.tag }}
@@ -291,8 +292,8 @@ jobs:
           fetch-depth: 0
       - uses: xenitab/gitops-promotion@v0.1.0
         with:
-          action: promote
           token: ${{ secrets.GITHUB_TOKEN }}
+          action: promote
 ```
 
 In order to block automatic promotion, you can add a status workflow:
@@ -313,8 +314,28 @@ jobs:
           fetch-depth: 0
       - uses: xenitab/gitops-promotion@v0.1.0
         with:
-          action: status
           token: ${{ secrets.GITHUB_TOKEN }}
+          action: status
+```
+
+### GitHub App authentication
+
+For simplicity, the above example use a Personal Access Token for authentication. However, in a production setup you probably want to use a [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app). Once you have set up a GitHub app, you can use the [tibdex/github-app-token](https://github.com/tibdex/github-app-token) action to generate a token for the app to access the repository. (In the case of the `build-app` job above, you also want to add `repository: ${{ github.repository_owner }}/my-gitops` since the token should be valid for the repository we dispatch to.)
+
+```yaml
+# ...
+- name: Generate GitHub App token
+  uses: tibdex/github-app-token@v1
+  id: generate_token
+  with:
+    app_id: ${{ secrets.MY_GITHUB_APP_ID }}
+    private_key: ${{ secrets.MY_GITHUB_APP_PRIVATE_KEY }}
+    # It defaults to current repo, so with peter-evans/repository-dispatch you need to specify repo
+    # repository: ${{ github.repository_owner }}/my-gitops
+- uses: xenitab/gitops-promotion@v0.1.0
+  with:
+    token: ${{ steps.generate_token.outputs.token }}
+    # ...
 ```
 
 Please note that you will need to make this a required check for merging into main, so it is important that it runs on all pull requests against "main" or your manual pull requests will not be mergeable.
