@@ -2,7 +2,6 @@ package git
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -55,18 +54,6 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 	tc := oauth2.NewClient(ctx, ts)
 
 	client := github.NewClient(tc)
-
-	_, _, err = client.Repositories.List(ctx, "", nil)
-	if err != nil {
-		var githubError *github.ErrorResponse
-		if errors.As(err, &githubError) {
-			if githubError.Response.StatusCode == 401 {
-				return nil, fmt.Errorf("unable to authenticate using token")
-			}
-		}
-
-		return nil, err
-	}
 
 	return &GitHubGITProvider{
 		authClient: tc,

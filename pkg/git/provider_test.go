@@ -25,14 +25,6 @@ func TestNewGitProvider(t *testing.T) {
 			expectedError:        "TF400813: The user '' is not authorized to access this resource.",
 		},
 		{
-			testDescription:      "github provider returns error",
-			providerString:       "github",
-			expectedProviderType: ProviderTypeGitHub,
-			remoteURL:            "https://github.com/organization/repository",
-			token:                "fake",
-			expectedError:        "unable to authenticate using token",
-		},
-		{
 			testDescription:      "fake provider returns error",
 			providerString:       "fake",
 			expectedProviderType: "",
