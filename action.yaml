@@ -5,7 +5,7 @@ description: |
 inputs:
   action:
     description: >
-      Action to perform; one of "new", "promote" or "status". See 
+      Action to perform; one of "new", "promote" or "status". See
       https://github.com/XenitAB/gitops-promotion/README.md for details.
     required: true
   token:
@@ -22,7 +22,7 @@ inputs:
     requires: false
 runs:
   using: docker
-  image: docker://ghcr.io/xenitab/gitops-promotion:v0.0.8
+  image: docker://ghcr.io/xenitab/gitops-promotion:v0.1.0
   entrypoint: /usr/local/bin/action-entrypoint.sh
   env:
     ACTION: ${{ inputs.action }}
