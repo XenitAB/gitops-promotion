@@ -4,7 +4,9 @@ description: |
   A tool to do automatic promotion with a GitOps workflow.
 inputs:
   action:
-    description: Action to perform; one of "new" or "promote".
+    description: >
+      Action to perform; one of "new", "promote" or "status". See 
+      https://github.com/XenitAB/gitops-promotion/README.md for details.
     required: true
   token:
     description: Access token (PAT) to git provider. You probably want secrets.GITHUB_TOKEN
