@@ -38,7 +38,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.22.1
+	k8s.io/apimachinery v0.22.3
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 )
 
