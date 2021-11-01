@@ -104,6 +104,7 @@ environments:
   - name: qa
     auto: true
   - name: prod
+    auto: false
 ```
 
 | property            | usage                                                                               |
