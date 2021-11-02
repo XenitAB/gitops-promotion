@@ -1,6 +1,120 @@
 # GitOps Promotion
 
-A tool to do automatic promotion with a GitOps workflow.
+## Overview
+
+gitops-promotion is tool to do automatic promotion with a GitOps workflow. It is ideally suited for use with [Kubernetes](https://kubernetes.io) manifests and a controller such as [Flux](https://fluxcd.io).
+
+gitops-promotion interacts with a Git provider to do automatic propagation of container images across a succession of environments. Supported Git providers:
+
+- GitHub
+- Azure Devops
+
+## The workflow
+
+gitops-promotion workflow assumes a separation one or more "app" repositories, which results in container images, and the repository (or repositories) that hold manifests that describe how those containers are deployed. We refer to this repository as the "GitOps" repository. Assuming a typical dev/qa/production succession of environments, gitops-promotion is meant to support a workflow that looks like this:
+
+1. A pipeline in `webui` app repository builds, tests and delivers an image to the container registry.
+1. The new container image triggers a new promotion (`gitops-promotion new`) in the GitOps repository. This pipeline:
+
+   1. creates a new branch `promote/webshop-webui`,
+   1. updates the image tag for the `webui` manifest in the "dev" environment to the newly released container image,
+   1. creates an auto-merging pull request,
+   1. Assuming the pull request has no failing checks, it is automatically merged into main, where a service such as Flux can apply it to the "dev" environment.
+
+1. The auto-merge triggers the promote pipeline (`gitops-promote promote`) in the GitOps repository. This pipeline goes through the same steps as "new" above except that it targets the next environment, in this case the "qa" environment.
+1. The promotion pull request for the "qa" env triggers the "status" pipeline (`gitops-promotions status`). This pipeline checks the status of the "dev" pull request (including any reconciliation status added by Flux) and reports that status as its own.
+1. Assuming the "dev" pull request status is green, the "qa" pull request is merged.
+1. Steps 4. and 5. are repeated for the "production" environment, but without auto-merge, so that they can be applied at an opportune time.
+
+Conceptually, this means that:
+
+- all new container images are applied to the "dev" environment
+- all new container images that are successfully applied will be propagated to the "qa" environment
+- pull requests for applying changes to the production environment are automatically created and can be merged by testers or product owners once they have been validated in the "qa" environment.
+
+See the provider-specific sections below for details about how to implement these pipelines.
+
+## The GitOps repository
+
+gitops-promotion assumes a repository with a layout like this (excluding CI pipeline definitions). In Flux, this is referred to as a [Monorepo](https://fluxcd.io/docs/guids/repository-structure/#monorepo) layout:
+
+```
+|-- gitops-promotion.yaml
+|-- <group 1>
+|   |-- <environment 1>
+|   |   |-- ... <-- your Kubernetes YAML here
+|   |   <environment 2>
+|   <group 2>
+|   |-- ...
+```
+
+Assuming we are serving a webshop from Kubernetes with three environments, the file structure may looks something like this:
+
+```
+|-- gitops-promotion.yaml
+|-- webshop
+|   |-- dev
+|   |   |-- cart.yaml
+|   |   |-- webui.yaml
+|   |-- qa
+|   |   |-- cart.yaml
+|   |   |-- webui.yaml
+|   |   production
+|   |   |-- cart.yaml
+|   |   |-- webui.yaml
+```
+
+See below for details about the `gitops-promotion.yaml` file.
+
+gitops-promotion uses [Flux image-automation-controller](https://github.com/fluxcd/image-automation-controller) to update the Container image tag for containers in your manifests. You annotate the image reference in your manifest (or in your Kustomization `image` override) like so, where `<group>` and `<app>` are arbitrary names that you use to group and name the services gitops-promotion is working with. For more information, see [Configure image updates](https://fluxcd.io/docs/guides/image-update/#configure-image-updates) in the Flux documentation.
+
+```yaml
+image: some/image:latest # {"$imagepolicy": "<group>:<app>:tag"}
+```
+
+For example, you may have a very simple manifest like this:
+
+```yaml
+apiVersion: apps/v1
+kind: Pod
+metadata:
+  name: webui
+spec:
+  containers:
+    - name: webui
+      image: ghcr.io/my-org/webui:1234567 # {"$imagepolicy": "webshop:ui:tag"}
+```
+
+When you have pushed a new image to your container registry, the pipeline runs the following command to start the promotion of your latest image across the configured environments:
+
+```shell
+gitops-promotion new --provider azdo --token s3cr3t --group webshop --app webui --tag 26f50d84db02
+```
+
+This will instruct gitops-promotion to look up the `$imagepolicy` entry `webshop:webui:tag` and update the container tag to refer to the tag `26f50d84db02` with the expectation that a GitOps controller such as Flux will react to this change and update the corresponding environment accordingly.
+
+## Configuration
+
+The `gitops-promotion.yaml` lists environment names and whether they allow automatic promotion. A typical config file looks like this. gitops-promotion will promote your change across environments in this order.
+
+```
+environments:
+  - name: dev
+    auto: true
+  - name: qa
+    auto: true
+  - name: prod
+    auto: false
+```
+
+| property            | usage                                                                               |
+| ------------------- | ----------------------------------------------------------------------------------- |
+| environments[].auto | Whether pull requests for this environment auto-merge or not                        |
+| environments[].name | The name for this environment. Must correspond to a directory present in all groups |
+
+## Using with Azure Devops
+
+Support for Azure DevOps is mature, but alas the documentation is not. TBD.
 
 ## Using with Github
 
