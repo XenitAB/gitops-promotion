@@ -320,7 +320,7 @@ jobs:
 
 ### GitHub App authentication
 
-For simplicity, the above example use a Personal Access Token for authentication. However, in a production setup you probably want to use a [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app). Once you have set up a GitHub app, you can use the [tibdex/github-app-token](https://github.com/tibdex/github-app-token) action to generate a token for the app to access the repository. (In the case of the `build-app` job above, you also want to add `repository: ${{ github.repository_owner }}/my-gitops` since the token should be valid for the repository we dispatch to.)
+For simplicity, the above example uses a Personal Access Token for authentication. However, in a production setup you probably want to use a [GitHub App](https://docs.github.com/en/developers/apps/building-github-apps/creating-a-github-app). Once you have set up a GitHub app, you can use the [tibdex/github-app-token](https://github.com/tibdex/github-app-token) action to generate a token for the app to access the repository. (In the case of the `build-app` job above, you also want to add `repository: ${{ github.repository_owner }}/my-gitops` since the token should be valid for the repository we dispatch to.)
 
 ```yaml
 # ...
