@@ -38,7 +38,7 @@ See the provider-specific sections below for details about how to implement thes
 
 gitops-promotion assumes a repository with a layout like this (excluding CI pipeline definitions). In Flux, this is referred to as a [Monorepo](https://fluxcd.io/docs/guids/repository-structure/#monorepo) layout:
 
-```
+```.shell
 |-- gitops-promotion.yaml
 |-- <group 1>
 |   |-- <environment 1>
@@ -50,7 +50,7 @@ gitops-promotion assumes a repository with a layout like this (excluding CI pipe
 
 Assuming we are serving a webshop from Kubernetes with three environments, the file structure may looks something like this:
 
-```
+```.shell
 |-- gitops-promotion.yaml
 |-- webshop
 |   |-- dev
@@ -97,7 +97,7 @@ This will instruct gitops-promotion to look up the `$imagepolicy` entry `webshop
 
 The `gitops-promotion.yaml` lists environment names and whether they allow automatic promotion. A typical config file looks like this. gitops-promotion will promote your change across environments in this order.
 
-```
+```.yaml
 environments:
   - name: dev
     auto: true
@@ -131,9 +131,12 @@ Depending on which container registry you are using, you may be able to set up t
           event-type: image-push
           client-payload: |
             {
+              "group": "apps",
+              "app": "my-app",
               "tag": "${{ github.sha }}"
             }
 ```
+
 The `repository` parameter holds the repository where you want to run `gitops-promotion`. The normal `${{ secrets.GITHUB_TOKEN }}` only has access to the local repository running in which the workflow is running, so we need to set up and pass an access token (GITOPS_REPO_TOKEN) that has access to that repository.
 
 Here is a complete example GitHub workflow for pushing a containerized app to GitHub Container Registry:
@@ -171,6 +174,8 @@ jobs:
           event-type: image-push
           client-payload: |
             {
+              "group": "apps",
+              "app": "my-app",
               "tag": "${{ github.sha }}"
             }
 ```
@@ -195,8 +200,8 @@ jobs:
         with:
           action: new
           token: ${{ secrets.GITHUB_TOKEN }}
-          group: apps
-          app: my-app
+          group: ${{ github.event.client_payload.group }}
+          app: ${{ github.event.client_payload.app }}
           tag: ${{ github.event.client_payload.tag }}
 ```
 
@@ -254,4 +259,4 @@ The test suite for the GitHub provider requires access to an actual GitHub repos
 
 env GITHUB_URL='' GITHUB_TOKEN='' go test ./...
 
-The GitHub Action CI runs the tests against https://github.com/gitops-promotion/gitops-promotion-testing.
+The GitHub Action CI runs the tests against [https://github.com/gitops-promotion/gitops-promotion-testing](https://github.com/gitops-promotion/gitops-promotion-testing).
