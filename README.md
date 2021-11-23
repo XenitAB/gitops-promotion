@@ -32,6 +32,21 @@ See the provider-specific sections below for details about how to implement thes
 
 ### gitops-promotion new
 
+```shell
+$ gitops-promotion new --help
+Usage of new:
+  -app string
+        Name of the application
+  -group string
+        Main application group
+  -provider string
+        git provider to use (default "azdo")
+  -tag string
+        Application version/tag to set
+  -token string
+        Access token (PAT) to git provider
+```
+
 The `new` command goes through this process:
 
    1. creates a new branch `promote/<group>-<app>` (or resets it if it already exists),
@@ -41,9 +56,27 @@ The `new` command goes through this process:
 
 ### gitops-promotion promote
 
+```shell
+$ gitops-promotion promote --help
+Usage of promote:
+  -provider string
+        git provider to use (default "azdo")
+  -token string
+        Access token (PAT) to git provider
+```
+
 The `promote` command is meant to be used in a pipeline that reacts to merge operations to the main branch that resulted from `new` or `promote` command. It looks up the pull request and uses the information contained therein to create a new pull request, following the process outlined under the `new` command.
 
 ### gitops-promotion status
+
+```shell
+$ gitops-promotion status --help
+Usage of status:
+  -provider string
+        git provider to use (default "azdo")
+  -token string
+        Access token (PAT) to git provider
+```
 
 The `status` command requests statuses on the merge commit that resulted from the previous' environment's pull request. It looks for a status check with context `*/<group>-<env>`. This matches the metadata name of a [Kustomization](https://fluxcd.io/docs/components/kustomize/kustomization/) resource as retported by the Flux Notification controller (in this case group is "apps"):
 
