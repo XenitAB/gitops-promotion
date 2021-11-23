@@ -11,16 +11,10 @@ gitops-promotion interacts with a Git provider to do automatic propagation of co
 
 ## The workflow
 
-gitops-promotion workflow assumes a separation one or more "app" repositories, which results in container images, and the repository (or repositories) that hold manifests that describe how those containers are deployed. We refer to this repository as the "GitOps" repository. Assuming a typical dev/qa/production succession of environments, gitops-promotion is meant to support a workflow that looks like this:
+gitops-promotion workflow assumes a separation of one or more "app" repositories, which results in container images, and the repository (or repositories) that hold manifests that describe how those containers are deployed. We refer to this repository as the "GitOps" repository. Assuming a typical dev/qa/production succession of environments, gitops-promotion is meant to support a workflow that looks like this:
 
 1. A pipeline in `webui` app repository builds, tests and delivers an image to the container registry.
-1. The new container image triggers a new promotion (`gitops-promotion new`) in the GitOps repository. This pipeline:
-
-   1. creates a new branch `promote/webshop-webui`,
-   1. updates the image tag for the `webui` manifest in the "dev" environment to the newly released container image,
-   1. creates an auto-merging pull request,
-   1. Assuming the pull request has no failing checks, it is automatically merged into main, where a service such as Flux can apply it to the "dev" environment.
-
+1. The new container image triggers a new promotion (`gitops-promotion new`) in the GitOps repository. It creates a new branch `promote/webshop-webui` an auto-merging pull request for the "dev" env. It updates the manifest of the app with the new image.
 1. The auto-merge triggers the promote pipeline (`gitops-promote promote`) in the GitOps repository. This pipeline goes through the same steps as "new" above except that it targets the next environment, in this case the "qa" environment.
 1. The promotion pull request for the "qa" env triggers the "status" pipeline (`gitops-promotions status`). This pipeline checks the status of the "dev" pull request (including any reconciliation status added by Flux) and reports that status as its own.
 1. Assuming the "dev" pull request status is green, the "qa" pull request is merged.
@@ -33,6 +27,29 @@ Conceptually, this means that:
 - pull requests for applying changes to the production environment are automatically created and can be merged by testers or product owners once they have been validated in the "qa" environment.
 
 See the provider-specific sections below for details about how to implement these pipelines.
+
+## The commands
+
+### gitops-promotion new
+
+The `new` command goes through this process:
+
+   1. creates a new branch `promote/<group>-<app>` (or resets it if it already exists),
+   1. updates the image tag for the app manifest in the first environment listed in the config file to the newly released container image (see below for more info how this works),
+   1. creates an auto-merging pull request,
+   1. Assuming the pull request has no failing checks, it is automatically merged into main, where a service such as Flux can apply it to the first environment.
+
+### gitops-promotion promote
+
+The `promote` command is meant to be used in a pipeline that reacts to merge operations to the main branch that resulted from `new` or `promote` command. It looks up the pull request and uses the information contained therein to create a new pull request, following the process outlined under the `new` command.
+
+### gitops-promotion status
+
+The `status` command requests statuses on the merge commit that resulted from the previous' environment's pull request. It looks for a status check with context `*/<group>-<env>`. This matches the metadata name of a [Kustomization](https://fluxcd.io/docs/components/kustomize/kustomization/) resource as retported by the Flux Notification controller (in this case group is "apps"):
+
+![Kustomization checks](./assets/kustomization-checks.png)
+
+It keeps looking for that status for some time. If it remains failed after some minutes, the `status` command fails, resulting in a failed check on the pull request, blocking any automatic merging.
 
 ## The GitOps repository
 
