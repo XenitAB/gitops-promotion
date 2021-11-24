@@ -7,7 +7,7 @@ require (
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fluxcd/image-automation-controller v0.14.1
-	github.com/fluxcd/image-reflector-controller/api v0.11.1
+	github.com/fluxcd/image-reflector-controller/api v0.14.0
 	github.com/fluxcd/source-controller v0.15.4
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect
@@ -26,7 +26,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.14.0
+	github.com/onsi/gomega v1.15.0
 	github.com/pierrec/lz4/v4 v4.1.6 // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20210725200734-83ba7b4c9228
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
@@ -38,7 +38,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.22.1
+	k8s.io/apimachinery v0.22.2
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 )
 
