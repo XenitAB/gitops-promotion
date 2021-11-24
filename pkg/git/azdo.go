@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 	"time"
@@ -104,6 +105,9 @@ func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto 
 			GitPullRequestToUpdate: &updatePR,
 		}
 		_, err = g.client.UpdatePullRequest(ctx, updateArgs)
+		if err == nil {
+			log.Printf("Updated PR #%d merging %s -> %s\n", *pr.PullRequestId, sourceRefName, targetRefName)
+		}
 		return err
 	}
 
@@ -126,6 +130,7 @@ func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto 
 	if err != nil {
 		return err
 	}
+	log.Printf("Created new PR #%d merging %s -> %s\n", *pr.PullRequestId, sourceRefName, targetRefName)
 	if !auto {
 		return nil
 	}
@@ -143,6 +148,9 @@ func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto 
 		GitPullRequestToUpdate: &updatePR,
 	}
 	_, err = g.client.UpdatePullRequest(ctx, updateArgs)
+	if err == nil {
+		log.Printf("Auto-merge activated for PR #%d\n", *pr.PullRequestId)
+	}
 	return err
 }
 

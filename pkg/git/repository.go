@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"log"
 	"path/filepath"
 	"time"
 
@@ -131,10 +132,12 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 	if err != nil {
 		return nil, err
 	}
-	sha, err := g.gitRepository.CreateCommit(fmt.Sprintf("refs/heads/%s", branchName), signature, signature, message, tree, commitTarget)
+	refName := fmt.Sprintf("refs/heads/%s", branchName)
+	sha, err := g.gitRepository.CreateCommit(refName, signature, signature, message, tree, commitTarget)
 	if err != nil {
 		return nil, err
 	}
+	log.Printf("Created commit %s on %s with message '%s'\n", sha, refName, message)
 
 	return sha, nil
 }
@@ -166,6 +169,7 @@ func (g *Repository) Push(branchName string, force bool) error {
 	if err != nil {
 		return fmt.Errorf("failed pushing branches %s: %w", branches, err)
 	}
+	log.Printf("Pushed branch %s to remote\n", branches[0])
 	return nil
 }
 

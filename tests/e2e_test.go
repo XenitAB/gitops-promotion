@@ -97,7 +97,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Equal(t, "created promotions pull request", newCommandMsgDev)
+			require.Contains(t, newCommandMsgDev, "created promotions pull request")
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "dev", app, tag)
 
@@ -116,7 +116,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Equal(t, "created promotions pull request", promoteCommandMsgQa)
+			require.Contains(t, promoteCommandMsgQa, "created promotions pull request")
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "qa", app, tag)
 			statusCommandMsgQa, err := testRunCommand(
@@ -128,7 +128,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Equal(t, "status check has succeed", statusCommandMsgQa)
+			require.Contains(t, statusCommandMsgQa, "status check has succeed")
 
 			repoQa := testGetRepository(t, path)
 			revQa := testGetRepositoryHeadRevision(t, repoQa)
@@ -152,7 +152,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Equal(t, "created promotions pull request", promoteCommandMsgProd)
+			require.Contains(t, promoteCommandMsgProd, "created promotions pull request")
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "prod", app, tag)
 			statusCommandMsgProd, err := testRunCommand(
@@ -164,7 +164,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Equal(t, "status check has succeed", statusCommandMsgProd)
+			require.Contains(t, statusCommandMsgProd, "status check has succeed")
 
 			repoProd := testGetRepository(t, path)
 			revProd := testGetRepositoryHeadRevision(t, repoProd)

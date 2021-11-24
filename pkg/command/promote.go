@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/fluxcd/image-automation-controller/pkg/update"
 	imagev1alpha1_reflect "github.com/fluxcd/image-reflector-controller/api/v1alpha1"
@@ -94,6 +95,7 @@ func updateImageTag(path, app, group, tag string) error {
 		},
 	}
 
+	log.Printf("Updating images with %s:%s:%s in %s\n", group, app, tag, path)
 	_, err := update.UpdateWithSetters(path, path, policies)
 	if err != nil {
 		return fmt.Errorf("failed updating manifests: %w", err)
