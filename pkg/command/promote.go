@@ -23,6 +23,8 @@ func PromoteCommand(ctx context.Context, providerType string, path, token string
 	}
 	pr, err := repo.GetPRThatCausedCurrentCommit(ctx)
 	if err != nil {
+		sha, _ := repo.GetCurrentCommit()
+		log.Printf("Failed retrieving pull request for commit %s: %v", sha, err)
 		//lint:ignore nilerr should not return error
 		return "skipping PR creation as commit does not originate from promotion PR", nil
 	}
@@ -63,7 +65,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
 	}
-	_, err = repo.CreateCommit(state.BranchName(), state.Title())
+	sha, err := repo.CreateCommit(state.BranchName(), state.Title())
 	if err != nil {
 		return "", fmt.Errorf("could not commit changes: %w", err)
 	}
@@ -79,7 +81,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
-	return fmt.Sprintf("created branch %s with pull request %d", state.BranchName(), prid), nil
+	return fmt.Sprintf("created branch %s with pull request %d on commit %s", state.BranchName(), prid, sha), nil
 }
 
 func updateImageTag(path, app, group, tag string) error {
