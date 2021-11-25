@@ -23,6 +23,7 @@ func PromoteCommand(ctx context.Context, providerType string, path, token string
 	}
 	pr, err := repo.GetPRThatCausedCurrentCommit(ctx)
 	if err != nil {
+		//nolint:errcheck //best effort for logging
 		sha, _ := repo.GetCurrentCommit()
 		log.Printf("Failed retrieving pull request for commit %s: %v", sha, err)
 		//lint:ignore nilerr should not return error

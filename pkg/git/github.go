@@ -65,6 +65,7 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 }
 
 // CreatePR ...
+//nolint:gocognit //temporary
 func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
 	sourceName := branchName
 	targetName := DefaultBranch
