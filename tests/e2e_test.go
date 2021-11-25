@@ -97,7 +97,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Contains(t, newCommandMsgDev, "created promotions pull request")
+			require.Contains(t, newCommandMsgDev, fmt.Sprintf("created branch %s with pull request", promoteBranchName))
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "dev", app, tag)
 
@@ -116,7 +116,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Contains(t, promoteCommandMsgQa, "created promotions pull request")
+			require.Contains(t, promoteCommandMsgQa, fmt.Sprintf("created branch %s with pull request", promoteBranchName))
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "qa", app, tag)
 			statusCommandMsgQa, err := testRunCommand(
@@ -152,7 +152,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Contains(t, promoteCommandMsgProd, "created promotions pull request")
+			require.Contains(t, promoteCommandMsgProd, fmt.Sprintf("created branch %s with pull request", promoteBranchName))
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "prod", app, tag)
 			statusCommandMsgProd, err := testRunCommand(

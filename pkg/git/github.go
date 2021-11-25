@@ -65,13 +65,13 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 }
 
 // CreatePR ...
-func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) error {
+func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
 	sourceName := branchName
 	targetName := DefaultBranch
 	title := state.Title()
 	description, err := state.Description()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	listOpts := &github.PullRequestListOptions{
@@ -81,7 +81,7 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 
 	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var prsOnBranch []*github.PullRequest
@@ -115,11 +115,11 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 			log.Printf("Updated PR #%d merging %s -> %s\n", pr.GetNumber(), sourceName, targetName)
 		}
 	default:
-		return fmt.Errorf("received more than one PRs when listing: %d", len(prsOnBranch))
+		return 0, fmt.Errorf("received more than one PRs when listing: %d", len(prsOnBranch))
 	}
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if auto != (pr.GetAutoMerge() != nil) {
@@ -145,7 +145,7 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 			}
 		}
 	}
-	return err
+	return pr.GetNumber(), err
 }
 
 func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (Status, error) {

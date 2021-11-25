@@ -75,11 +75,11 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not get environment automation state: %w", err)
 	}
-	err = repo.CreatePR(ctx, state.BranchName(), auto, state)
+	prid, err := repo.CreatePR(ctx, state.BranchName(), auto, state)
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
-	return "created promotions pull request", nil
+	return fmt.Sprintf("created branch %s with pull request %d", state.BranchName(), prid), nil
 }
 
 func updateImageTag(path, app, group, tag string) error {

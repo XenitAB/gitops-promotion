@@ -173,7 +173,7 @@ func (g *Repository) Push(branchName string, force bool) error {
 	return nil
 }
 
-func (g *Repository) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) error {
+func (g *Repository) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
 	return g.gitProvider.CreatePR(ctx, branchName, auto, state)
 }
 
