@@ -22,7 +22,7 @@ type AzdoGITProvider struct {
 
 // NewAdoGITProvider ...
 func NewAzdoGITProvider(ctx context.Context, remoteURL, token string) (*AzdoGITProvider, error) {
-	host, id, err := parseGitAddress(remoteURL)
+	host, id, err := ParseGitAddress(remoteURL)
 	if err != nil {
 		return nil, err
 	}

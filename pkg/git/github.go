@@ -34,7 +34,7 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 		return nil, fmt.Errorf("token empty")
 	}
 
-	host, id, err := parseGitAddress(remoteURL)
+	host, id, err := ParseGitAddress(remoteURL)
 	if err != nil {
 		return nil, err
 	}

@@ -235,10 +235,8 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			pushBranch(repo, branchName)
 		})
 
-		It("merges the PR directly", func() {
-			Expect(err).To(BeNil())
-			_, e := provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
-			Expect(e.Error()).To(ContainSubstring("no PR found"))
+		It("returns an error saying auto-merge is not turned on", func() {
+			Expect(err.Error()).To(ContainSubstring("could not set auto-merge"))
 		})
 
 		When("and the repository has branch protection requiring passing statuses", func() {
