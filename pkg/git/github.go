@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -64,13 +65,14 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 }
 
 // CreatePR ...
-func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) error {
+//nolint:gocognit //temporary
+func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
 	sourceName := branchName
 	targetName := DefaultBranch
 	title := state.Title()
 	description, err := state.Description()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	listOpts := &github.PullRequestListOptions{
@@ -80,7 +82,7 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 
 	openPrs, _, err := g.client.PullRequests.List(ctx, g.owner, g.repo, listOpts)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	var prsOnBranch []*github.PullRequest
@@ -101,18 +103,24 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 			MaintainerCanModify: github.Bool(true),
 		}
 		pr, _, err = g.client.PullRequests.Create(ctx, g.owner, g.repo, createOpts)
+		if err == nil {
+			log.Printf("Created new PR #%d merging %s -> %s\n", pr.GetNumber(), sourceName, targetName)
+		}
 	case 1:
 		pr = (prsOnBranch)[0]
 		pr.Title = &title
 		pr.Body = &description
 		pr.Base.Ref = &targetName
 		pr, _, err = g.client.PullRequests.Edit(ctx, g.owner, g.repo, *pr.Number, pr)
+		if err == nil {
+			log.Printf("Updated PR #%d merging %s -> %s\n", pr.GetNumber(), sourceName, targetName)
+		}
 	default:
-		return fmt.Errorf("received more than one PRs when listing: %d", len(prsOnBranch))
+		return 0, fmt.Errorf("received more than one PRs when listing: %d", len(prsOnBranch))
 	}
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if auto != (pr.GetAutoMerge() != nil) {
@@ -128,11 +136,17 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 			PullRequestID: pr.GetNodeID(),
 		}
 		err = client.Mutate(ctx, &mutation, input, nil)
-		if err != nil && strings.Contains(err.Error(), "not in the correct state") {
-			err = g.MergePR(ctx, int(pr.GetNumber()), *pr.GetHead().SHA)
+		if err == nil {
+			log.Printf("Auto-merge activated for PR #%d\n", pr.GetNumber())
+		} else {
+			log.Printf("Failed to activate auto-merge for PR %d: %v", pr.GetNumber(), err)
+			if strings.Contains(err.Error(), "not in the correct state") {
+				err = g.MergePR(ctx, int(pr.GetNumber()), *pr.GetHead().SHA)
+				log.Printf("Explicitly merged PR #%d\n", pr.GetNumber())
+			}
 		}
 	}
-	return err
+	return pr.GetNumber(), err
 }
 
 func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (Status, error) {
@@ -141,6 +155,7 @@ func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group str
 	if err != nil {
 		return Status{}, err
 	}
+	log.Printf("Considering statuses %v\n", statuses)
 
 	name := fmt.Sprintf("%s-%s", group, env)
 	for _, s := range statuses {

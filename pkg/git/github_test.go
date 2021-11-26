@@ -133,6 +133,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		}
 	})
 
+	var prid int
 	var err error
 	var branchName string
 	var auto bool
@@ -145,7 +146,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	}
 
 	JustBeforeEach(func() {
-		err = provider.CreatePR(ctx, branchName, auto, state)
+		prid, err = provider.CreatePR(ctx, branchName, auto, state)
 	})
 
 	When("Creating PR with empty values", func() {
@@ -193,23 +194,33 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		It("doesn't return an error", func() {
 			Expect(err).To(BeNil())
 		})
+
+		It("returns the PR number", func() {
+			Expect(prid).To(BeNumerically(">", 0))
+		})
 	})
 
 	When("Creating PR on a branch that already has a PR", func() {
+		var origPRId int
 		var repo *Repository
 
 		BeforeEach(func() {
+			var e error
 			branchName = randomBranchName("testing-create-pr")
 			repo = cloneTestRepoWithNewBranch(ctx, branchName)
 			commitAFile(repo, branchName)
 			pushBranch(repo, branchName)
 
-			e := provider.CreatePR(ctx, branchName, false, state)
+			origPRId, e = provider.CreatePR(ctx, branchName, false, state)
 			Expect(e).To(BeNil())
 		})
 
 		It("doesn't return an error", func() {
 			Expect(err).To(BeNil())
+		})
+
+		It("returns the original PRs id", func() {
+			Expect(prid).To(Equal(origPRId))
 		})
 	})
 
@@ -403,7 +414,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			repo2 := cloneTestRepoOnExistingBranch(ctx, branchName)
 			state.Sha = commitAFile(repo2, branchName).String()
 			pushBranch(repo2, branchName)
-			e := provider.CreatePR(ctx, branchName, false, state)
+			_, e := provider.CreatePR(ctx, branchName, false, state)
 			Expect(e).To(BeNil())
 
 			pr, e := provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
@@ -455,6 +466,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 	})
 
 	When("Getting PR with existing branchName", func() {
+		var origPRId int
 		BeforeEach(func() {
 			branchName = randomBranchName("testing-get-pr-with-branch")
 
@@ -465,13 +477,13 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 			state.Sha = commitAFile(repo2, branchName).String()
 			pushBranch(repo2, branchName)
 
-			e = provider.CreatePR(ctx, branchName, false, state)
+			origPRId, e = provider.CreatePR(ctx, branchName, false, state)
 			Expect(e).To(BeNil())
 		})
 
 		It("doesn't return an error and ID larger than 0", func() {
 			Expect(err).To(BeNil())
-			Expect(pr.ID).To(BeNumerically(">", 0))
+			Expect(pr.ID).To(Equal(origPRId))
 		})
 	})
 })
@@ -521,7 +533,7 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			commitSha := commitAFile(repo2, branchName)
 			pushBranch(repo2, branchName)
 
-			e := provider.CreatePR(ctx, branchName, false, state)
+			_, e := provider.CreatePR(ctx, branchName, false, state)
 			Expect(e).To(BeNil())
 
 			mergedPR, e = provider.GetPRWithBranch(ctx, branchName, DefaultBranch)

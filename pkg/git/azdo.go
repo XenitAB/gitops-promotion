@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 	"time"
@@ -67,13 +68,14 @@ func NewAzdoGITProvider(ctx context.Context, remoteURL, token string) (*AzdoGITP
 }
 
 // CreatePR ...
-func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) error {
+//nolint:funlen // temporary
+func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
 	sourceRefName := fmt.Sprintf("refs/heads/%s", branchName)
 	targetRefName := fmt.Sprintf("refs/heads/%s", DefaultBranch)
 	title := state.Title()
 	description, err := state.Description()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	// Update PR if it already exists
@@ -104,7 +106,10 @@ func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto 
 			GitPullRequestToUpdate: &updatePR,
 		}
 		_, err = g.client.UpdatePullRequest(ctx, updateArgs)
-		return err
+		if err == nil {
+			log.Printf("Updated PR #%d merging %s -> %s\n", *pr.PullRequestId, sourceRefName, targetRefName)
+		}
+		return *pr.PullRequestId, err
 	}
 
 	// Create new PR
@@ -124,10 +129,11 @@ func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto 
 	}
 	pr, err := g.client.CreatePullRequest(ctx, createArgs)
 	if err != nil {
-		return err
+		return 0, err
 	}
+	log.Printf("Created new PR #%d merging %s -> %s\n", *pr.PullRequestId, sourceRefName, targetRefName)
 	if !auto {
-		return nil
+		return *pr.PullRequestId, nil
 	}
 
 	// This update is done to set auto merge. The reason this is not
@@ -143,7 +149,10 @@ func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto 
 		GitPullRequestToUpdate: &updatePR,
 	}
 	_, err = g.client.UpdatePullRequest(ctx, updateArgs)
-	return err
+	if err == nil {
+		log.Printf("Auto-merge activated for PR #%d\n", *pr.PullRequestId)
+	}
+	return *pr.PullRequestId, err
 }
 
 func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (Status, error) {

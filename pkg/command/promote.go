@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"github.com/fluxcd/image-automation-controller/pkg/update"
 	imagev1alpha1_reflect "github.com/fluxcd/image-reflector-controller/api/v1alpha1"
@@ -22,6 +23,9 @@ func PromoteCommand(ctx context.Context, providerType string, path, token string
 	}
 	pr, err := repo.GetPRThatCausedCurrentCommit(ctx)
 	if err != nil {
+		//nolint:errcheck //best effort for logging
+		sha, _ := repo.GetCurrentCommit()
+		log.Printf("Failed retrieving pull request for commit %s: %v", sha, err)
 		//lint:ignore nilerr should not return error
 		return "skipping PR creation as commit does not originate from promotion PR", nil
 	}
@@ -62,7 +66,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
 	}
-	_, err = repo.CreateCommit(state.BranchName(), state.Title())
+	sha, err := repo.CreateCommit(state.BranchName(), state.Title())
 	if err != nil {
 		return "", fmt.Errorf("could not commit changes: %w", err)
 	}
@@ -74,11 +78,11 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not get environment automation state: %w", err)
 	}
-	err = repo.CreatePR(ctx, state.BranchName(), auto, state)
+	prid, err := repo.CreatePR(ctx, state.BranchName(), auto, state)
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
-	return "created promotions pull request", nil
+	return fmt.Sprintf("created branch %s with pull request %d on commit %s", state.BranchName(), prid, sha), nil
 }
 
 func updateImageTag(path, app, group, tag string) error {
@@ -94,6 +98,7 @@ func updateImageTag(path, app, group, tag string) error {
 		},
 	}
 
+	log.Printf("Updating images with %s:%s:%s in %s\n", group, app, tag, path)
 	_, err := update.UpdateWithSetters(path, path, policies)
 	if err != nil {
 		return fmt.Errorf("failed updating manifests: %w", err)
