@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/google/go-github/v37/github"
+	"github.com/google/go-github/v40/github"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
@@ -34,7 +34,7 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 		return nil, fmt.Errorf("token empty")
 	}
 
-	host, id, err := parseGitAddress(remoteURL)
+	host, id, err := ParseGitAddress(remoteURL)
 	if err != nil {
 		return nil, err
 	}
@@ -141,8 +141,7 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 		} else {
 			log.Printf("Failed to activate auto-merge for PR %d: %v", pr.GetNumber(), err)
 			if strings.Contains(err.Error(), "not in the correct state") {
-				err = g.MergePR(ctx, int(pr.GetNumber()), *pr.GetHead().SHA)
-				log.Printf("Explicitly merged PR #%d\n", pr.GetNumber())
+				err = fmt.Errorf("could not set auto-merge on PR #%d (check auto-merge setting and required checks)", pr.GetNumber())
 			}
 		}
 	}

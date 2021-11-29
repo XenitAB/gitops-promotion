@@ -46,7 +46,7 @@ func TestParseGitAddress(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		host, id, err := parseGitAddress(c.input)
+		host, id, err := ParseGitAddress(c.input)
 		if c.expectedError != "" {
 			require.EqualError(t, err, c.expectedError)
 		}

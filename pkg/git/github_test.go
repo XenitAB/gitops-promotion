@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v37/github"
+	"github.com/google/go-github/v40/github"
 	"github.com/google/uuid"
 	git2go "github.com/libgit2/git2go/v31"
 	. "github.com/onsi/ginkgo"
@@ -235,10 +235,8 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			pushBranch(repo, branchName)
 		})
 
-		It("merges the PR directly", func() {
-			Expect(err).To(BeNil())
-			_, e := provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
-			Expect(e.Error()).To(ContainSubstring("no PR found"))
+		It("returns an error saying auto-merge is not turned on", func() {
+			Expect(err.Error()).To(ContainSubstring("could not set auto-merge"))
 		})
 
 		When("and the repository has branch protection requiring passing statuses", func() {

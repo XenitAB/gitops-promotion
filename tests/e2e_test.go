@@ -9,9 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-github/v40/github"
 	"github.com/stretchr/testify/require"
 	"github.com/xenitab/gitops-promotion/pkg/command"
 	"github.com/xenitab/gitops-promotion/pkg/git"
+	"golang.org/x/oauth2"
 )
 
 type providerConfig struct {
@@ -20,6 +22,12 @@ type providerConfig struct {
 	password      string
 	url           string
 	defaultBranch string
+}
+
+func makeGitHubClient(ctx context.Context, config *providerConfig) *github.Client {
+	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: config.password})
+	tc := oauth2.NewClient(ctx, ts)
+	return github.NewClient(tc)
 }
 
 var providers = []providerConfig{
@@ -37,6 +45,58 @@ var providers = []providerConfig{
 		url:           os.Getenv("GITHUB_URL"),
 		defaultBranch: "main",
 	},
+}
+
+// nolint:gocritic // Using reference will trigger warning that p is a loop variable below
+func testSetup(ctx context.Context, config providerConfig) error {
+	if config.providerType == "github" {
+		client := makeGitHubClient(ctx, &config)
+		_, id, err := git.ParseGitAddress(config.url)
+		if err != nil {
+			return err
+		}
+		comp := strings.Split(id, "/")
+		owner := comp[0]
+		repo := comp[1]
+		_, _, err = client.Repositories.UpdateBranchProtection(
+			ctx,
+			owner,
+			repo,
+			config.defaultBranch,
+			&github.ProtectionRequest{
+				EnforceAdmins: true,
+				RequiredStatusChecks: &github.RequiredStatusChecks{
+					Strict:   true,
+					Contexts: []string{},
+				},
+			})
+		return err
+	} else {
+		return nil
+	}
+}
+
+// nolint:gocritic // Using reference will trigger warning that p is a loop variable below
+func testTeardown(ctx context.Context, config providerConfig) error {
+	if config.providerType == "github" {
+		client := makeGitHubClient(ctx, &config)
+		_, id, err := git.ParseGitAddress(config.url)
+		if err != nil {
+			return err
+		}
+		comp := strings.Split(id, "/")
+		owner := comp[0]
+		repo := comp[1]
+		_, _, err = client.Repositories.UpdateBranchProtection(
+			ctx,
+			owner,
+			repo,
+			config.defaultBranch,
+			&github.ProtectionRequest{})
+		return err
+	} else {
+		return nil
+	}
 }
 
 func testRunCommand(t *testing.T, path string, verb string, args ...string) (string, error) {
@@ -65,6 +125,9 @@ func testRunCommand(t *testing.T, path string, verb string, args ...string) (str
 
 func TestProviderE2E(t *testing.T) {
 	for _, p := range providers {
+		ctx := context.Background()
+		err := testSetup(ctx, p)
+		require.NoError(t, err)
 		t.Run(p.providerType, func(t *testing.T) {
 			if p.url == "" || p.password == "" {
 				t.Skipf("Skipping test since url or password env var is not set")
@@ -178,5 +241,7 @@ func TestProviderE2E(t *testing.T) {
 
 			testSetStatus(t, ctx, providerType, revMergedProd, group, "prod", p.url, p.password, true)
 		})
+		err = testTeardown(ctx, p)
+		require.NoError(t, err)
 	}
 }

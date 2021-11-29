@@ -168,6 +168,22 @@ Support for Azure DevOps is mature, but alas the documentation is not. TBD.
 
 ## Using with Github
 
+gitops-promotion has full support for GitHub.
+
+### Required repository configuration
+
+gitops-promotion makes use of [PR auto-merge](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/incorporating-changes-from-a-pull-request/automatically-merging-a-pull-request). This requires specific configuration:
+
+1. In repository settings, turn on "Allow auto-merge"
+1. Set up a branch protection rule for your "main" branch:
+  - "Require a pull request before merging"
+  - "Require status checks to pass"
+  - Add the workflow for the `status` commend to "Status checks that are required". In the example below, you would enter "prev-env-status". Bizarrely, the UI will not allow you to enter the name, so you may have to trigger a run once so you can use the search interface.
+
+You can verify that your settings are correct by manually creating a pull request and verify that the button says "Enable auto-merge".
+
+### Configuring your workflow
+
 gitops-promotion is available as a Github Action.
 
 Depending on which container registry you are using, you may be able to set up triggers that activates your gitops-promotion workflow. If this is not the case, you can use GitHub [repository_dispatch](https://docs.github.com/en/actions/learn-github-actions/events-that-trigger-workflows#repository_dispatch) events. These allow GitHub actions on one repository to notify another repository. Use the excellent [repository-dispatch GitHub Action](https://github.com/marketplace/actions/repository-dispatch) for readable YAML. You would add a step at the end of your container-building workflow that looks something like this:
@@ -298,6 +314,12 @@ jobs:
           action: status
           token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+Please note that you will need to make this a required check for merging into main, so it is important that it runs on all pull requests against "main" or your manual pull requests will not be mergeable.
+
+## Troubleshooting
+
+**GitHub PR creation says "could not set auto-merge on PR"**: Your repository is not properly configured to allow pull request auto-merge. Pleae see the configuration section above for information on how to do this.
 
 ## Building
 

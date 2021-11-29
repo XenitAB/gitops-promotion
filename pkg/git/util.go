@@ -7,7 +7,8 @@ import (
 	giturls "github.com/whilp/git-urls"
 )
 
-func parseGitAddress(s string) (string, string, error) {
+// ParseGitAddress ...
+func ParseGitAddress(s string) (host string, id string, err error) {
 	u, err := giturls.Parse(s)
 	if err != nil {
 		return "", "", err
@@ -18,8 +19,8 @@ func parseGitAddress(s string) (string, string, error) {
 		scheme = "https"
 	}
 
-	id := strings.TrimLeft(u.Path, "/")
+	id = strings.TrimLeft(u.Path, "/")
 	id = strings.TrimSuffix(id, ".git")
-	host := fmt.Sprintf("%s://%s", scheme, u.Host)
+	host = fmt.Sprintf("%s://%s", scheme, u.Host)
 	return host, id, nil
 }
