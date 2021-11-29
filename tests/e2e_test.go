@@ -22,8 +22,6 @@ type providerConfig struct {
 	password      string
 	url           string
 	defaultBranch string
-	setup         func(ctx context.Context, config *providerConfig) error
-	teardown      func(ctx context.Context, config *providerConfig) error
 }
 
 func makeGitHubClient(ctx context.Context, config *providerConfig) *github.Client {
@@ -39,8 +37,6 @@ var providers = []providerConfig{
 		password:      os.Getenv("AZDO_PAT"),
 		url:           os.Getenv("AZDO_URL"),
 		defaultBranch: "main",
-		setup:         func(ctx context.Context, config *providerConfig) error { return nil },
-		teardown:      func(ctx context.Context, config *providerConfig) error { return nil },
 	},
 	{
 		providerType:  "github",
@@ -48,47 +44,59 @@ var providers = []providerConfig{
 		password:      os.Getenv("GITHUB_TOKEN"),
 		url:           os.Getenv("GITHUB_URL"),
 		defaultBranch: "main",
-		setup: func(ctx context.Context, config *providerConfig) error {
-			client := makeGitHubClient(ctx, config)
-			_, id, err := git.ParseGitAddress(config.url)
-			if err != nil {
-				return err
-			}
-			comp := strings.Split(id, "/")
-			owner := comp[0]
-			repo := comp[1]
-			_, _, err = client.Repositories.UpdateBranchProtection(
-				ctx,
-				owner,
-				repo,
-				config.defaultBranch,
-				&github.ProtectionRequest{
-					EnforceAdmins: true,
-					RequiredStatusChecks: &github.RequiredStatusChecks{
-						Strict:   true,
-						Contexts: []string{},
-					},
-				})
-			return err
-		},
-		teardown: func(ctx context.Context, config *providerConfig) error {
-			client := makeGitHubClient(ctx, config)
-			_, id, err := git.ParseGitAddress(config.url)
-			if err != nil {
-				return err
-			}
-			comp := strings.Split(id, "/")
-			owner := comp[0]
-			repo := comp[1]
-			_, _, err = client.Repositories.UpdateBranchProtection(
-				ctx,
-				owner,
-				repo,
-				config.defaultBranch,
-				&github.ProtectionRequest{})
-			return err
-		},
 	},
+}
+
+// nolint:gocritic // Using reference will trigger warning that p is a loop variable below
+func testSetup(ctx context.Context, config providerConfig) error {
+	if config.providerType == "github" {
+		client := makeGitHubClient(ctx, &config)
+		_, id, err := git.ParseGitAddress(config.url)
+		if err != nil {
+			return err
+		}
+		comp := strings.Split(id, "/")
+		owner := comp[0]
+		repo := comp[1]
+		_, _, err = client.Repositories.UpdateBranchProtection(
+			ctx,
+			owner,
+			repo,
+			config.defaultBranch,
+			&github.ProtectionRequest{
+				EnforceAdmins: true,
+				RequiredStatusChecks: &github.RequiredStatusChecks{
+					Strict:   true,
+					Contexts: []string{},
+				},
+			})
+		return err
+	} else {
+		return nil
+	}
+}
+
+// nolint:gocritic // Using reference will trigger warning that p is a loop variable below
+func testTeardown(ctx context.Context, config providerConfig) error {
+	if config.providerType == "github" {
+		client := makeGitHubClient(ctx, &config)
+		_, id, err := git.ParseGitAddress(config.url)
+		if err != nil {
+			return err
+		}
+		comp := strings.Split(id, "/")
+		owner := comp[0]
+		repo := comp[1]
+		_, _, err = client.Repositories.UpdateBranchProtection(
+			ctx,
+			owner,
+			repo,
+			config.defaultBranch,
+			&github.ProtectionRequest{})
+		return err
+	} else {
+		return nil
+	}
 }
 
 func testRunCommand(t *testing.T, path string, verb string, args ...string) (string, error) {
@@ -118,8 +126,7 @@ func testRunCommand(t *testing.T, path string, verb string, args ...string) (str
 func TestProviderE2E(t *testing.T) {
 	for _, p := range providers {
 		ctx := context.Background()
-		//nolint:gosec // I'm calling it on p...
-		err := p.setup(ctx, &p)
+		err := testSetup(ctx, p)
 		require.NoError(t, err)
 		t.Run(p.providerType, func(t *testing.T) {
 			if p.url == "" || p.password == "" {
@@ -234,8 +241,7 @@ func TestProviderE2E(t *testing.T) {
 
 			testSetStatus(t, ctx, providerType, revMergedProd, group, "prod", p.url, p.password, true)
 		})
-		//nolint:gosec // I'm calling it on p...
-		err = p.teardown(ctx, &p)
+		err = testTeardown(ctx, p)
 		require.NoError(t, err)
 	}
 }
