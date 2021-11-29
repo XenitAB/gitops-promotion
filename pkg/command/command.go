@@ -12,7 +12,11 @@ import (
 )
 
 func getConfig(path string) (config.Config, error) {
-	cfg, err := config.LoadConfig(path)
+	file, err := os.Open(fmt.Sprintf("%s/gitops-promotion.yaml", path))
+	if err != nil {
+		return config.Config{}, err
+	}
+	cfg, err := config.LoadConfig(file)
 	if err != nil {
 		return config.Config{}, fmt.Errorf("could not load config: %w", err)
 	}

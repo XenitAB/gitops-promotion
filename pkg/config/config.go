@@ -3,20 +3,14 @@ package config
 import (
 	"errors"
 	"fmt"
-	"os"
+	"io"
 
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	GitConfig    GitConfig     `yaml:"git"`
+	PRFlow       string        `yaml:"prflow"`
 	Environments []Environment `yaml:"environments"`
-}
-
-type GitConfig struct {
-	DefaultBranch string `yaml:"defaultBranch"`
-	RemoteName    string `yaml:"remoteName"`
-	User          string `yaml:"user"`
 }
 
 type Environment struct {
@@ -24,19 +18,14 @@ type Environment struct {
 	Automated bool   `yaml:"auto"`
 }
 
-func LoadConfig(path string) (Config, error) {
-	data, err := os.ReadFile(fmt.Sprintf("%s/gitops-promotion.yaml", path))
-	if err != nil {
-		return Config{}, err
-	}
-
+func LoadConfig(file io.Reader) (Config, error) {
 	cfg := Config{}
-	err = yaml.Unmarshal([]byte(data), &cfg)
-	if err != nil {
-		return Config{}, err
+	decoder := yaml.NewDecoder(file)
+	err := decoder.Decode(&cfg)
+	if len(cfg.Environments) == 0 {
+		return Config{}, fmt.Errorf("environments list cannot be empty")
 	}
-
-	return cfg, nil
+	return cfg, err
 }
 
 func (c Config) PrevEnvironment(envName string) (Environment, error) {
@@ -70,4 +59,13 @@ func (c Config) IsEnvironmentAutomated(name string) (bool, error) {
 	}
 
 	return false, fmt.Errorf("could not find environment with name %q", name)
+}
+
+func (c Config) IsAnyEnvironmentManual() bool {
+	for _, e := range c.Environments {
+		if !e.Automated {
+			return true
+		}
+	}
+	return false
 }
