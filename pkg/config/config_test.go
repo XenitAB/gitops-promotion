@@ -38,4 +38,30 @@ var _ = Describe("Config", func() {
 			Expect(config.Environments).To(ContainElement(Environment{Name: "dev", Automated: true}))
 		})
 	})
+
+	Describe("Looking at prflow", func() {
+		It("defaults to per-app", func() {
+			Expect(config.PRFlow).To(Equal("per-app"))
+		})
+
+		Describe("When given per-env", func() {
+			BeforeEach(func() {
+				configData = environmentList + "prflow: per-env\n"
+			})
+
+			It("yields per-env", func() {
+				Expect(config.PRFlow).To(Equal("per-env"))
+			})
+		})
+
+		Describe("When given invalid input", func() {
+			BeforeEach(func() {
+				configData = environmentList + "prflow: nonsense\n"
+			})
+
+			It("throws an error", func() {
+				Expect(err).NotTo(BeNil())
+			})
+		})
+	})
 })

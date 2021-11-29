@@ -25,6 +25,11 @@ func LoadConfig(file io.Reader) (Config, error) {
 	if len(cfg.Environments) == 0 {
 		return Config{}, fmt.Errorf("environments list cannot be empty")
 	}
+	if cfg.PRFlow == "" {
+		cfg.PRFlow = "per-app"
+	} else if cfg.PRFlow != "per-app" && cfg.PRFlow != "per-env" {
+		return Config{}, fmt.Errorf("invalid prflow value %s", cfg.PRFlow)
+	}
 	return cfg, err
 }
 

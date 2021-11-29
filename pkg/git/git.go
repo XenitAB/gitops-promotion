@@ -46,10 +46,6 @@ func (p *PRState) Description() (string, error) {
 	return description, nil
 }
 
-func (p *PRState) BranchName() string {
-	return fmt.Sprintf("%s%s/%s-%s", PromoteBranchPrefix, p.Env, p.Group, p.App)
-}
-
 func parsePrState(body string) (PRState, error) {
 	comp := strings.Split(body, " -->")
 	if len(comp) < 2 {
