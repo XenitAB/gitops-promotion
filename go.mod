@@ -8,7 +8,7 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fluxcd/image-automation-controller v0.14.1
 	github.com/fluxcd/image-reflector-controller/api v0.11.1
-	github.com/fluxcd/source-controller v0.15.4
+	github.com/fluxcd/source-controller v0.19.1
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/analysis v0.20.1 // indirect
 	github.com/go-openapi/errors v0.20.0 // indirect
@@ -21,12 +21,11 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.2.0
 	github.com/jfrog/jfrog-client-go v0.26.1
-	github.com/klauspost/compress v1.12.2 // indirect
-	github.com/libgit2/git2go/v31 v31.6.0
+	github.com/libgit2/git2go/v31 v31.6.1
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.4
-	github.com/onsi/gomega v1.14.0
+	github.com/onsi/gomega v1.15.0
 	github.com/pierrec/lz4/v4 v4.1.6 // indirect
 	github.com/shurcooL/githubv4 v0.0.0-20210725200734-83ba7b4c9228
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
@@ -34,11 +33,10 @@ require (
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/whilp/git-urls v1.0.0
 	github.com/xlab/treeprint v1.1.0 // indirect
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/oauth2 v0.0.0-20210819190943-2bc19b11175f
 	golang.org/x/term v0.0.0-20210429154555-c04ba851c2a4 // indirect
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/apimachinery v0.22.1
+	k8s.io/apimachinery v0.22.2
 	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 )
 
