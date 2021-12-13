@@ -24,11 +24,9 @@ func TestPRState(t *testing.T) {
 
 	for _, c := range cases {
 		title := c.state.Title()
-		branchName := c.state.BranchName()
 		description, err := c.state.Description()
 		require.NoError(t, err)
 		require.Contains(t, title, fmt.Sprintf("Promote %s", c.state.Group))
-		require.Contains(t, branchName, fmt.Sprintf("%s%s-%s", PromoteBranchPrefix, c.state.Group, c.state.App))
 		require.Contains(t, description, "<!-- metadata = ")
 		require.Contains(t, description, " -->")
 		require.Contains(t, description, c.state.Env)

@@ -62,15 +62,21 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	}
 
 	// Push and create PR
-	err = repo.CreateBranch(state.BranchName(), true)
+	var promoteBranch string
+	if cfg.PRFlow == "per-env" {
+		promoteBranch = fmt.Sprintf("%s%s/%s-%s", git.PromoteBranchPrefix, state.Env, state.Group, state.App)
+	} else {
+		promoteBranch = fmt.Sprintf("%s%s-%s", git.PromoteBranchPrefix, state.Group, state.App)
+	}
+	err = repo.CreateBranch(promoteBranch, true)
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
 	}
-	sha, err := repo.CreateCommit(state.BranchName(), state.Title())
+	sha, err := repo.CreateCommit(promoteBranch, state.Title())
 	if err != nil {
 		return "", fmt.Errorf("could not commit changes: %w", err)
 	}
-	err = repo.Push(state.BranchName(), true)
+	err = repo.Push(promoteBranch, true)
 	if err != nil {
 		return "", fmt.Errorf("could not push changes: %w", err)
 	}
@@ -78,11 +84,11 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not get environment automation state: %w", err)
 	}
-	prid, err := repo.CreatePR(ctx, state.BranchName(), auto, state)
+	prid, err := repo.CreatePR(ctx, promoteBranch, auto, state)
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
-	return fmt.Sprintf("created branch %s with pull request %d on commit %s", state.BranchName(), prid, sha), nil
+	return fmt.Sprintf("created branch %s with pull request %d on commit %s", promoteBranch, prid, sha), nil
 }
 
 func updateImageTag(path, app, group, tag string) error {

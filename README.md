@@ -148,6 +148,7 @@ This will instruct gitops-promotion to look up the `$imagepolicy` entry `webshop
 The `gitops-promotion.yaml` lists environment names and whether they allow automatic promotion. A typical config file looks like this. gitops-promotion will promote your change across environments in this order.
 
 ```.yaml
+prflow: per-app
 environments:
   - name: dev
     auto: true
@@ -159,6 +160,7 @@ environments:
 
 | property            | usage                                                                               |
 | ------------------- | ----------------------------------------------------------------------------------- |
+| prflow              | `per-app` means later changes will "reset" the single PR for that app, while `per-env` will upsert a PR that app's PR for a particular environment |
 | environments[].auto | Whether pull requests for this environment auto-merge or not                        |
 | environments[].name | The name for this environment. Must correspond to a directory present in all groups |
 

@@ -143,8 +143,6 @@ func TestProviderE2E(t *testing.T) {
 			group := "testgroup"
 			app := "testapp"
 
-			promoteBranchName := fmt.Sprintf("promote/%s-%s", group, app)
-
 			ctx := context.Background()
 
 			// Test DEV
@@ -160,6 +158,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
+			promoteBranchName := fmt.Sprintf("promote/dev/%s-%s", group, app)
 			require.Contains(t, newCommandMsgDev, fmt.Sprintf("created branch %s with pull request", promoteBranchName))
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "dev", app, tag)
@@ -179,6 +178,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
+			promoteBranchName = fmt.Sprintf("promote/qa/%s-%s", group, app)
 			require.Contains(t, promoteCommandMsgQa, fmt.Sprintf("created branch %s with pull request", promoteBranchName))
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "qa", app, tag)
@@ -215,6 +215,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
+			promoteBranchName = fmt.Sprintf("promote/prod/%s-%s", group, app)
 			require.Contains(t, promoteCommandMsgProd, fmt.Sprintf("created branch %s with pull request", promoteBranchName))
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, promoteBranchName, group, "prod", app, tag)
