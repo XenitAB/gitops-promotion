@@ -49,7 +49,7 @@ Usage of new:
 
 The `new` command goes through this process:
 
-1.  creates a new branch `promote/<group>-<app>` (or resets it if it already exists),
+1.  creates a new branch `promote/<group>-<app>` (or `promote/<group>-<app>-<env>` if `per-env` is set; resets it if it already exists),
 1.  updates the image tag for the app manifest in the first environment listed in the config file to the newly released container image (see below for more info how this works),
 1.  creates an auto-merging pull request,
 1.  Assuming the pull request has no failing checks, it is automatically merged into main, where a service such as Flux can apply it to the first environment.
