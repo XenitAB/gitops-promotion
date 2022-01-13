@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	scgit "github.com/fluxcd/source-controller/pkg/git"
 	git2go "github.com/libgit2/git2go/v31"
 )
 
@@ -149,23 +148,13 @@ func (g *Repository) Push(branchName string, force bool) error {
 		return fmt.Errorf("could not find remote %q: %w", DefaultRemote, err)
 	}
 
-	callback := git2go.RemoteCallbacks{
-		CredentialsCallback: func(url string, usernameFromURL string, allowedTypes git2go.CredentialType) (*git2go.Credential, error) {
-			cred, err := git2go.NewCredentialUserpassPlaintext(DefaultUsername, g.token)
-			if err != nil {
-				return nil, err
-			}
-			return cred, nil
-		},
-	}
-
 	forceFlag := "+"
 	if !force {
 		forceFlag = ""
 	}
 
 	branches := []string{fmt.Sprintf("%srefs/heads/%s", forceFlag, branchName)}
-	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: callback})
+	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: credentialsCallback(DefaultUsername, g.token)})
 	if err != nil {
 		return fmt.Errorf("failed pushing branches %s: %w", branches, err)
 	}
@@ -232,14 +221,10 @@ func (g *Repository) GetPRThatCausedCurrentCommit(ctx context.Context) (PullRequ
 }
 
 func Clone(url, username, password, path, branchName string) error {
-	auth := basicAuthMethod(username, password)
-
 	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
 		FetchOptions: &git2go.FetchOptions{
-			DownloadTags: git2go.DownloadTagsNone,
-			RemoteCallbacks: git2go.RemoteCallbacks{
-				CredentialsCallback: auth.CredCallback,
-			},
+			DownloadTags:    git2go.DownloadTagsNone,
+			RemoteCallbacks: credentialsCallback(username, password),
 		},
 		CheckoutBranch: branchName,
 	})
@@ -247,15 +232,15 @@ func Clone(url, username, password, path, branchName string) error {
 	return err
 }
 
-func basicAuthMethod(username, password string) *scgit.Auth {
-	credCallback := func(url string, usernameFromURL string, allowedTypes git2go.CredentialType) (*git2go.Credential, error) {
-		cred, err := git2go.NewCredentialUserpassPlaintext(username, password)
-		if err != nil {
-			return nil, err
-		}
+func credentialsCallback(username, password string) git2go.RemoteCallbacks {
+	return git2go.RemoteCallbacks{
+		CredentialsCallback: func(url string, usernameFromURL string, allowedTypes git2go.CredentialType) (*git2go.Credential, error) {
+			cred, err := git2go.NewCredentialUserpassPlaintext(username, password)
+			if err != nil {
+				return nil, err
+			}
 
-		return cred, nil
+			return cred, nil
+		},
 	}
-
-	return &scgit.Auth{CredCallback: credCallback}
 }

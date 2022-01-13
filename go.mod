@@ -6,7 +6,6 @@ require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fluxcd/image-automation-controller v0.14.1
 	github.com/fluxcd/image-reflector-controller/api v0.15.0
-	github.com/fluxcd/source-controller v0.15.4
 	github.com/google/go-github/v40 v40.0.0
 	github.com/google/uuid v1.3.0
 	github.com/jfrog/jfrog-client-go v1.7.1
