@@ -3,18 +3,11 @@ package command
 import (
 	"context"
 
+	"github.com/xenitab/gitops-promotion/pkg/config"
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-func NewCommand(ctx context.Context, providerType string, path, token, group, app, tag string) (string, error) {
-	cfg, err := getConfig(path)
-	if err != nil {
-		return "", err
-	}
-	repo, err := getRepository(ctx, providerType, path, token)
-	if err != nil {
-		return "", err
-	}
+func NewCommand(ctx context.Context, cfg config.Config, repo *git.Repository, group, app, tag string) (string, error) {
 	state := git.PRState{
 		Env:   "",
 		Group: group,

@@ -116,9 +116,9 @@ func testRunCommand(t *testing.T, path string, verb string, args ...string) (str
 		if os.Getenv("CI") != "" {
 			return "", fmt.Errorf("CI is expected to test container. When Env var CI is set, please set GITOPS_PROMOTION_IMAGE.")
 		}
-		var cmdline = []string{"gitops-promotion", verb, "-sourcedir", path}
+		var cmdline = []string{"gitops-promotion", verb, "--sourcedir", path}
 		cmdline = append(cmdline, args...)
-		message, err := command.Run(cmdline)
+		message, err := command.Run(context.TODO(), cmdline)
 		return message, err
 	}
 }
@@ -150,11 +150,11 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"new",
-				"-provider", p.providerType,
-				"-token", p.password,
-				"-group", group,
-				"-app", app,
-				"-tag", tag,
+				"--provider", p.providerType,
+				"--token", p.password,
+				"--group", group,
+				"--app", app,
+				"--tag", tag,
 			)
 			require.NoError(t, err)
 
@@ -173,8 +173,8 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"promote",
-				"-provider", p.providerType,
-				"-token", p.password,
+				"--provider", p.providerType,
+				"--token", p.password,
 			)
 			require.NoError(t, err)
 
@@ -186,8 +186,8 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"status",
-				"-provider", p.providerType,
-				"-token", p.password,
+				"--provider", p.providerType,
+				"--token", p.password,
 			)
 			require.NoError(t, err)
 
@@ -210,8 +210,8 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"promote",
-				"-provider", p.providerType,
-				"-token", p.password,
+				"--provider", p.providerType,
+				"--token", p.password,
 			)
 			require.NoError(t, err)
 
@@ -223,8 +223,8 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"status",
-				"-provider", p.providerType,
-				"-token", p.password,
+				"--provider", p.providerType,
+				"--token", p.password,
 			)
 			require.NoError(t, err)
 

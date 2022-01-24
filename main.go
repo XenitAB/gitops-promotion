@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -8,7 +9,7 @@ import (
 )
 
 func main() {
-	message, err := command.Run(os.Args)
+	message, err := command.Run(context.Background(), os.Args)
 	if message != "" {
 		fmt.Println(message)
 	}

@@ -6,19 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/xenitab/gitops-promotion/pkg/config"
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-func StatusCommand(ctx context.Context, providerType string, path, token string) (string, error) {
-	cfg, err := getConfig(path)
-	if err != nil {
-		return "", err
-	}
-	repo, err := getRepository(ctx, providerType, path, token)
-	if err != nil {
-		return "", err
-	}
-
+func StatusCommand(ctx context.Context, cfg config.Config, repo *git.Repository) (string, error) {
 	// If branch does not contain promote it was manual, return early
 	branchName, err := repo.GetBranchName()
 	if err != nil {
