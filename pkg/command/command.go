@@ -83,6 +83,8 @@ func Run(ctx context.Context, args []string) (string, error) {
 		return PromoteCommand(ctx, cfg, repo)
 	case "status":
 		return StatusCommand(ctx, cfg, repo)
+	case "feature":
+		return FeatureCommand(ctx, cfg, repo)
 	default:
 		return "", fmt.Errorf("Unknown command: %s", args[1])
 	}
