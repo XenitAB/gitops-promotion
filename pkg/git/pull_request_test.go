@@ -35,7 +35,7 @@ func TestPRState(t *testing.T) {
 		require.Contains(t, description, c.state.Tag)
 		require.Contains(t, description, c.state.Sha)
 
-		parsedState, err := parsePrState(description)
+		parsedState, err := NewPRState(description)
 		require.NoError(t, err)
 
 		require.Equal(t, c.state.Env, parsedState.Env)
@@ -105,7 +105,7 @@ func TestNewPR(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		_, err := newPR(c.id, c.title, c.description, c.prState)
+		_, err := NewPullRequest(c.id, c.title, c.description)
 		if err != nil && c.expectedErr == "" {
 			t.Errorf("Expected err to be nil: %q", err)
 		}

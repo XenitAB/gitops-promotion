@@ -29,7 +29,6 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 	if remoteURL == "" {
 		return nil, fmt.Errorf("remoteURL empty")
 	}
-
 	if token == "" {
 		return nil, fmt.Errorf("token empty")
 	}
@@ -38,7 +37,6 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 	if err != nil {
 		return nil, err
 	}
-
 	if host != "https://github.com" {
 		return nil, fmt.Errorf("host does not start with https://github.com: %s", host)
 	}
@@ -47,13 +45,11 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 	if len(comp) != 2 {
 		return nil, fmt.Errorf("invalid repository id %q", id)
 	}
-
 	owner := comp[0]
 	repo := comp[1]
 
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
-
 	client := github.NewClient(tc)
 
 	return &GitHubGITProvider{
@@ -148,11 +144,11 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 	return pr.GetNumber(), err
 }
 
-func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (Status, error) {
+func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (CommitStatus, error) {
 	opts := &github.ListOptions{PerPage: 50}
 	statuses, _, err := g.client.Repositories.ListStatuses(ctx, g.owner, g.repo, sha, opts)
 	if err != nil {
-		return Status{}, err
+		return CommitStatus{}, err
 	}
 	log.Printf("Considering statuses %v\n", statuses)
 
@@ -160,16 +156,15 @@ func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group str
 	for _, s := range statuses {
 		comp := strings.Split(*s.Context, "/")
 		if len(comp) != 2 {
-			return Status{}, fmt.Errorf("status context in wrong format: %q", *s.Context)
+			return CommitStatus{}, fmt.Errorf("status context in wrong format: %q", *s.Context)
 		}
 		if comp[1] == name {
-			return Status{
+			return CommitStatus{
 				Succeeded: *s.State == "success",
 			}, nil
 		}
 	}
-
-	return Status{}, fmt.Errorf("no status found for sha %q", sha)
+	return CommitStatus{}, fmt.Errorf("no status found for sha %q", sha)
 }
 
 func (g *GitHubGITProvider) SetStatus(ctx context.Context, sha string, group string, env string, succeeded bool) error {
@@ -274,7 +269,7 @@ func (g *GitHubGITProvider) GetPRWithBranch(ctx context.Context, source, target 
 
 	pr := prs[0]
 
-	return newPR(pr.Number, pr.Title, pr.Body, nil)
+	return NewPullRequest(pr.Number, pr.Title, pr.Body)
 }
 
 func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string) (PullRequest, error) {
@@ -307,5 +302,5 @@ func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha strin
 	}
 	pr := prs[0]
 
-	return newPR(pr.Number, pr.Title, pr.Body, nil)
+	return NewPullRequest(pr.Number, pr.Title, pr.Body)
 }

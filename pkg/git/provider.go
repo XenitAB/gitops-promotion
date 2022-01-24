@@ -14,7 +14,7 @@ const (
 )
 
 type GitProvider interface {
-	GetStatus(ctx context.Context, sha, group, env string) (Status, error)
+	GetStatus(ctx context.Context, sha, group, env string) (CommitStatus, error)
 	SetStatus(ctx context.Context, sha string, group string, env string, succeeded bool) error
 	CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error)
 	GetPRWithBranch(ctx context.Context, source, target string) (PullRequest, error)

@@ -288,7 +288,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 	})
 
 	var err error
-	var status Status
+	var status CommitStatus
 	state := &PRState{
 		Env:   "dev",
 		Group: "testgroup",

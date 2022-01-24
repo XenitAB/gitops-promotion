@@ -7,6 +7,8 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
+// NewCommand creates the initial PR which is going to be merged to the first environment. The main
+// difference to PromoteCommand is that it does not use a previous PR to create the first PR.
 func NewCommand(ctx context.Context, cfg config.Config, repo *git.Repository, group, app, tag string) (string, error) {
 	state := git.PRState{
 		Env:   "",

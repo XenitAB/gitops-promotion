@@ -13,6 +13,8 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
+// PromoteCommand is run after a PR is merged. It creates a new PR for the next environment
+// if there is one present.
 func PromoteCommand(ctx context.Context, cfg config.Config, repo *git.Repository) (string, error) {
 	pr, err := repo.GetPRThatCausedCurrentCommit(ctx)
 	if err != nil {
@@ -55,21 +57,16 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	}
 
 	// Push and create PR
-	var promoteBranch string
-	if cfg.PRFlow == "per-env" {
-		promoteBranch = fmt.Sprintf("%s%s/%s-%s", git.PromoteBranchPrefix, state.Env, state.Group, state.App)
-	} else {
-		promoteBranch = fmt.Sprintf("%s%s-%s", git.PromoteBranchPrefix, state.Group, state.App)
-	}
-	err = repo.CreateBranch(promoteBranch, true)
+	branchName := state.BranchName(cfg.PRFlow == "per-env")
+	err = repo.CreateBranch(branchName, true)
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
 	}
-	sha, err := repo.CreateCommit(promoteBranch, state.Title())
+	sha, err := repo.CreateCommit(branchName, state.Title())
 	if err != nil {
 		return "", fmt.Errorf("could not commit changes: %w", err)
 	}
-	err = repo.Push(promoteBranch, true)
+	err = repo.Push(branchName, true)
 	if err != nil {
 		return "", fmt.Errorf("could not push changes: %w", err)
 	}
@@ -77,11 +74,11 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not get environment automation state: %w", err)
 	}
-	prid, err := repo.CreatePR(ctx, promoteBranch, auto, state)
+	prid, err := repo.CreatePR(ctx, branchName, auto, state)
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
-	return fmt.Sprintf("created branch %s with pull request %d on commit %s", promoteBranch, prid, sha), nil
+	return fmt.Sprintf("created branch %s with pull request %d on commit %s", branchName, prid, sha), nil
 }
 
 func updateImageTag(path, app, group, tag string) error {
@@ -96,12 +93,10 @@ func updateImageTag(path, app, group, tag string) error {
 			},
 		},
 	}
-
 	log.Printf("Updating images with %s:%s:%s in %s\n", group, app, tag, path)
 	_, err := update.UpdateWithSetters(path, path, policies)
 	if err != nil {
 		return fmt.Errorf("failed updating manifests: %w", err)
 	}
-
 	return nil
 }
