@@ -6,7 +6,8 @@ import (
 	"log"
 
 	"github.com/fluxcd/image-automation-controller/pkg/update"
-	imagev1alpha1_reflect "github.com/fluxcd/image-reflector-controller/api/v1alpha1"
+	imagev1_reflect "github.com/fluxcd/image-reflector-controller/api/v1beta1"
+	"github.com/go-logr/logr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/xenitab/gitops-promotion/pkg/config"
@@ -28,10 +29,12 @@ func PromoteCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 }
 
 func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state *git.PRState) (string, error) {
+	if state.GetPRType() == git.PRTypePromote {
+		return "not promoting feature branch", nil
+	}
+
 	// Check if there is a next env or get next env
-	if state.Env == "" {
-		state.Env = cfg.Environments[0].Name
-	} else {
+	if state.Env != cfg.Environments[0].Name {
 		if !cfg.HasNextEnvironment(state.Env) {
 			return "no next environment to promote to", nil
 		}
@@ -82,19 +85,19 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 }
 
 func updateImageTag(path, app, group, tag string) error {
-	policies := []imagev1alpha1_reflect.ImagePolicy{
+	policies := []imagev1_reflect.ImagePolicy{
 		{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      app,
 				Namespace: group,
 			},
-			Status: imagev1alpha1_reflect.ImagePolicyStatus{
+			Status: imagev1_reflect.ImagePolicyStatus{
 				LatestImage: fmt.Sprintf("%s:%s", app, tag),
 			},
 		},
 	}
 	log.Printf("Updating images with %s:%s:%s in %s\n", group, app, tag, path)
-	_, err := update.UpdateWithSetters(path, path, policies)
+	_, err := update.UpdateWithSetters(logr.Discard(), path, path, policies)
 	if err != nil {
 		return fmt.Errorf("failed updating manifests: %w", err)
 	}

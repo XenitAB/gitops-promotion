@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+type PRType string
+
+const (
+	PRTypePromote PRType = "promote"
+	PRTypeFeature PRType = "feature"
+)
+
 type PullRequest struct {
 	ID          int
 	Title       string
@@ -35,12 +42,6 @@ func NewPullRequest(id *int, title *string, description *string) (PullRequest, e
 		State:       state,
 	}, nil
 }
-
-type PRType string
-
-const (
-	PRTypePromote PRType = "promote"
-)
 
 type PRState struct {
 	Env   string `json:"env"`
@@ -88,6 +89,8 @@ func (p *PRState) Title() string {
 	switch p.GetPRType() {
 	case PRTypePromote:
 		return fmt.Sprintf("Promote %s/%s version %s to environment %s", p.Group, p.App, p.Tag, p.Env)
+	case PRTypeFeature:
+		return fmt.Sprintf("Review %s/%s feature %s in environment %s", p.Group, p.App, p.Tag, p.Env)
 	default:
 		return ""
 	}

@@ -20,7 +20,7 @@ const (
 func Run(ctx context.Context, args []string) (string, error) {
 	// Global flags
 	if len(args) < 2 {
-		return "", fmt.Errorf("new, promote or status subcommand is required")
+		return "", fmt.Errorf("new, feature, promote, or status subcommand is required")
 	}
 	defaultPath, err := os.Getwd()
 	if err != nil {
@@ -79,12 +79,21 @@ func Run(ctx context.Context, args []string) (string, error) {
 			return "", err
 		}
 		return NewCommand(ctx, cfg, repo, *group, *app, *tag)
+	case "feature":
+		featureCommand := flag.NewFlagSet(args[1], flag.ContinueOnError)
+		featureCommand.ParseErrorsWhitelist = flag.ParseErrorsWhitelist{UnknownFlags: true}
+		group := featureCommand.String("group", "", "Main application group")
+		app := featureCommand.String("app", "", "Name of the application")
+		tag := featureCommand.String("tag", "", "Application version/tag to set")
+		err := featureCommand.Parse(args[2:])
+		if err != nil {
+			return "", err
+		}
+		return FeatureCommand(ctx, cfg, repo, *group, *app, *tag)
 	case "promote":
 		return PromoteCommand(ctx, cfg, repo)
 	case "status":
 		return StatusCommand(ctx, cfg, repo)
-	case "feature":
-		return FeatureCommand(ctx, cfg, repo)
 	default:
 		return "", fmt.Errorf("Unknown command: %s", args[1])
 	}

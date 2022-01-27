@@ -9,15 +9,34 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	PRFlow        string        `yaml:"prflow"`
-	StatusTimeout time.Duration `yaml:"status_timeout_minutes"`
-	Environments  []Environment `yaml:"environments"`
+type FeatureApp struct {
+	LabelSelector map[string]string `yaml:"selector"`
+}
+
+type Feature map[string]map[string]FeatureApp
+
+func (f Feature) GetFeatureApp(group, app string) (FeatureApp, error) {
+	featureGroup, ok := f[group]
+	if !ok {
+		return FeatureApp{}, fmt.Errorf("group not found: %s", group)
+	}
+	featureApp, ok := featureGroup[app]
+	if !ok {
+		return FeatureApp{}, fmt.Errorf("app not found: %s", app)
+	}
+	return featureApp, nil
 }
 
 type Environment struct {
 	Name      string `yaml:"name"`
 	Automated bool   `yaml:"auto"`
+}
+
+type Config struct {
+	PRFlow        string        `yaml:"prflow"`
+	StatusTimeout time.Duration `yaml:"status_timeout_minutes"`
+	Environments  []Environment `yaml:"environments"`
+	Features      Feature       `yaml:"features"`
 }
 
 func LoadConfig(file io.Reader) (Config, error) {
