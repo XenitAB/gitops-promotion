@@ -35,15 +35,15 @@ See the provider-specific sections below for details about how to implement thes
 ```shell
 $ gitops-promotion new --help
 Usage of new:
-  -app string
+  --app string
         Name of the application
-  -group string
+  --group string
         Main application group
-  -provider string
+  --provider string
         git provider to use (default "azdo")
-  -tag string
+  --tag string
         Application version/tag to set
-  -token string
+  --token string
         Access token (PAT) to git provider
 ```
 
@@ -59,9 +59,9 @@ The `new` command goes through this process:
 ```shell
 $ gitops-promotion promote --help
 Usage of promote:
-  -provider string
+  --provider string
         git provider to use (default "azdo")
-  -token string
+  --token string
         Access token (PAT) to git provider
 ```
 
@@ -72,9 +72,9 @@ The `promote` command is meant to be used in a pipeline that reacts to merge ope
 ```shell
 $ gitops-promotion status --help
 Usage of status:
-  -provider string
+  --provider string
         git provider to use (default "azdo")
-  -token string
+  --token string
         Access token (PAT) to git provider
 ```
 

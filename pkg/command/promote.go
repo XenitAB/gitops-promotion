@@ -7,20 +7,13 @@ import (
 
 	"github.com/fluxcd/image-automation-controller/pkg/update"
 	imagev1alpha1_reflect "github.com/fluxcd/image-reflector-controller/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/xenitab/gitops-promotion/pkg/config"
 	"github.com/xenitab/gitops-promotion/pkg/git"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func PromoteCommand(ctx context.Context, providerType string, path, token string) (string, error) {
-	cfg, err := getConfig(path)
-	if err != nil {
-		return "", fmt.Errorf("could not get configuration: %w", err)
-	}
-	repo, err := getRepository(ctx, providerType, path, token)
-	if err != nil {
-		return "", fmt.Errorf("could not get repository: %w", err)
-	}
+func PromoteCommand(ctx context.Context, cfg config.Config, repo *git.Repository) (string, error) {
 	pr, err := repo.GetPRThatCausedCurrentCommit(ctx)
 	if err != nil {
 		//nolint:errcheck //best effort for logging
