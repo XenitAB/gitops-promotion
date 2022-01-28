@@ -9,7 +9,7 @@ require (
 	github.com/google/go-github/v40 v40.0.0
 	github.com/google/uuid v1.3.0
 	github.com/jfrog/jfrog-client-go v1.7.1
-	github.com/libgit2/git2go/v31 v31.7.4
+	github.com/libgit2/git2go/v31 v31.7.7
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
