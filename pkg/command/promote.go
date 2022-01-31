@@ -5,13 +5,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/fluxcd/image-automation-controller/pkg/update"
-	imagev1_reflect "github.com/fluxcd/image-reflector-controller/api/v1beta1"
-	"github.com/go-logr/logr"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	"github.com/xenitab/gitops-promotion/pkg/config"
 	"github.com/xenitab/gitops-promotion/pkg/git"
+	"github.com/xenitab/gitops-promotion/pkg/manifest"
 )
 
 // PromoteCommand is run after a PR is merged. It creates a new PR for the next environment
@@ -54,7 +50,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 
 	// Update image tag
 	manifestPath := fmt.Sprintf("%s/%s/%s", repo.GetRootDir(), state.Group, state.Env)
-	err = updateImageTag(manifestPath, state.App, state.Group, state.Tag)
+	err = manifest.UpdateImageTag(manifestPath, state.App, state.Group, state.Tag)
 	if err != nil {
 		return "", fmt.Errorf("failed updating manifests: %w", err)
 	}
@@ -82,24 +78,4 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
 	return fmt.Sprintf("created branch %s with pull request %d on commit %s", branchName, prid, sha), nil
-}
-
-func updateImageTag(path, app, group, tag string) error {
-	policies := []imagev1_reflect.ImagePolicy{
-		{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      app,
-				Namespace: group,
-			},
-			Status: imagev1_reflect.ImagePolicyStatus{
-				LatestImage: fmt.Sprintf("%s:%s", app, tag),
-			},
-		},
-	}
-	log.Printf("Updating images with %s:%s:%s in %s\n", group, app, tag, path)
-	_, err := update.UpdateWithSetters(logr.Discard(), path, path, policies)
-	if err != nil {
-		return fmt.Errorf("failed updating manifests: %w", err)
-	}
-	return nil
 }
