@@ -10,7 +10,7 @@ type PullRequest struct {
 	ID          int
 	Title       string
 	Description string
-	State       PRState
+	State       *PRState
 }
 
 func NewPullRequest(id *int, title *string, description *string) (PullRequest, error) {
@@ -52,20 +52,23 @@ type PRState struct {
 	Type  PRType `json:"type"`
 }
 
-func NewPRState(body string) (PRState, error) {
+func NewPRState(body string) (*PRState, error) {
+	// Check if the body contains state data. If it does not it should return nil.
 	comp := strings.Split(body, " -->")
 	if len(comp) < 2 {
-		return PRState{}, fmt.Errorf("invalid metadata: %q", body)
+		return nil, nil
 	}
 	comp = strings.Split(comp[0], "<!-- metadata = ")
 	if len(comp) < 2 {
-		return PRState{}, fmt.Errorf("invalid metadata: %q", body)
+		return nil, nil
 	}
+
+	// Parse the state json data
 	out := comp[1]
-	prState := PRState{}
-	err := json.Unmarshal([]byte(out), &prState)
+	prState := &PRState{}
+	err := json.Unmarshal([]byte(out), prState)
 	if err != nil {
-		return PRState{}, err
+		return nil, err
 	}
 	return prState, nil
 }
