@@ -17,7 +17,7 @@ import (
 )
 
 type providerConfig struct {
-	providerType  string
+	providerType  git.ProviderType
 	username      string
 	password      string
 	url           string
@@ -32,14 +32,14 @@ func makeGitHubClient(ctx context.Context, config *providerConfig) *github.Clien
 
 var providers = []providerConfig{
 	{
-		providerType:  "azdo",
+		providerType:  git.ProviderTypeAzdo,
 		username:      "gitops-promotion",
 		password:      os.Getenv("AZDO_PAT"),
 		url:           os.Getenv("AZDO_URL"),
 		defaultBranch: "main",
 	},
 	{
-		providerType:  "github",
+		providerType:  git.ProviderTypeGitHub,
 		username:      "gitops-promotion",
 		password:      os.Getenv("GITHUB_TOKEN"),
 		url:           os.Getenv("GITHUB_URL"),
@@ -128,14 +128,11 @@ func TestProviderE2E(t *testing.T) {
 		ctx := context.Background()
 		err := testSetup(ctx, p)
 		require.NoError(t, err)
-		t.Run(p.providerType, func(t *testing.T) {
+		t.Run(string(p.providerType), func(t *testing.T) {
 			if p.url == "" || p.password == "" {
 				t.Skipf("Skipping test since url or password env var is not set")
 			}
 			path := t.TempDir()
-			providerType, err := git.StringToProviderType(p.providerType)
-			require.NoError(t, err)
-
 			testCloneRepository(t, p.url, p.username, p.password, path, p.defaultBranch)
 
 			now := time.Now()
@@ -150,7 +147,7 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"new",
-				"--provider", p.providerType,
+				"--provider", string(p.providerType),
 				"--token", p.password,
 				"--group", group,
 				"--app", app,
@@ -166,14 +163,14 @@ func TestProviderE2E(t *testing.T) {
 			repoDev := testGetRepository(t, path)
 			revDev := testGetRepositoryHeadRevision(t, repoDev)
 
-			testSetStatus(t, ctx, providerType, revDev, group, "dev", p.url, p.password, true)
+			testSetStatus(t, ctx, p.providerType, revDev, group, "dev", p.url, p.password, true)
 
 			// Test QA
 			promoteCommandMsgQa, err := testRunCommand(
 				t,
 				path,
 				"promote",
-				"--provider", p.providerType,
+				"--provider", string(p.providerType),
 				"--token", p.password,
 			)
 			require.NoError(t, err)
@@ -186,7 +183,7 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"status",
-				"--provider", p.providerType,
+				"--provider", string(p.providerType),
 				"--token", p.password,
 			)
 			require.NoError(t, err)
@@ -196,21 +193,21 @@ func TestProviderE2E(t *testing.T) {
 			repoQa := testGetRepository(t, path)
 			revQa := testGetRepositoryHeadRevision(t, repoQa)
 
-			testMergePR(t, ctx, providerType, p.url, p.password, promoteBranchName, revQa)
+			testMergePR(t, ctx, p.providerType, p.url, p.password, promoteBranchName, revQa)
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "qa", app, tag)
 
 			repoMergedQa := testGetRepository(t, path)
 			revMergedQa := testGetRepositoryHeadRevision(t, repoMergedQa)
 
-			testSetStatus(t, ctx, providerType, revMergedQa, group, "qa", p.url, p.password, true)
+			testSetStatus(t, ctx, p.providerType, revMergedQa, group, "qa", p.url, p.password, true)
 
 			// Test PROD
 			promoteCommandMsgProd, err := testRunCommand(
 				t,
 				path,
 				"promote",
-				"--provider", p.providerType,
+				"--provider", string(p.providerType),
 				"--token", p.password,
 			)
 			require.NoError(t, err)
@@ -223,7 +220,7 @@ func TestProviderE2E(t *testing.T) {
 				t,
 				path,
 				"status",
-				"--provider", p.providerType,
+				"--provider", string(p.providerType),
 				"--token", p.password,
 			)
 			require.NoError(t, err)
@@ -233,14 +230,14 @@ func TestProviderE2E(t *testing.T) {
 			repoProd := testGetRepository(t, path)
 			revProd := testGetRepositoryHeadRevision(t, repoProd)
 
-			testMergePR(t, ctx, providerType, p.url, p.password, promoteBranchName, revProd)
+			testMergePR(t, ctx, p.providerType, p.url, p.password, promoteBranchName, revProd)
 
 			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "prod", app, tag)
 
 			repoMergedProd := testGetRepository(t, path)
 			revMergedProd := testGetRepositoryHeadRevision(t, repoMergedProd)
 
-			testSetStatus(t, ctx, providerType, revMergedProd, group, "prod", p.url, p.password, true)
+			testSetStatus(t, ctx, p.providerType, revMergedProd, group, "prod", p.url, p.password, true)
 		})
 		err = testTeardown(ctx, p)
 		require.NoError(t, err)
