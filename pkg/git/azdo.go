@@ -165,6 +165,13 @@ func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group strin
 	if err != nil {
 		return CommitStatus{}, err
 	}
+	var displays = make([]string, len(*statuses))
+	for i := range *statuses {
+		s := (*statuses)[i]
+		displays = append(displays, fmt.Sprintf("%s/%s: %s (%s)", *s.Context.Genre, *s.Context.Name, *s.State, *s.Description))
+	}
+	log.Printf("Considering statuses %v\n", displays)
+
 	genre := "fluxcd"
 	name := fmt.Sprintf("%s-%s", group, env)
 	for i := range *statuses {

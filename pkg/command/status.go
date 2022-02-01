@@ -46,14 +46,14 @@ func StatusCommand(ctx context.Context, cfg config.Config, repo *git.Repository)
 
 		status, err := repo.GetStatus(ctx, pr.State.Sha, pr.State.Group, prevEnv.Name)
 		if err != nil {
-			fmt.Printf("retrying status check: %v\n", err)
+			fmt.Printf("retrying status check for %s-%s: %v\n", pr.State.Group, prevEnv.Name, err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 		if !status.Succeeded {
-			return "", fmt.Errorf("commit status check has failed %q", pr.State.Sha)
+			return "", fmt.Errorf("commit status check for %s-%s has failed %q", pr.State.Group, prevEnv.Name, pr.State.Sha)
 		}
 		return "status check has succeed", nil
 	}
-	return "", fmt.Errorf("commit status check has timed out %q", pr.State.Sha)
+	return "", fmt.Errorf("commit status check for %s-%s has timed out %q", pr.State.Group, prevEnv.Name, pr.State.Sha)
 }

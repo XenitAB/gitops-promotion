@@ -150,7 +150,12 @@ func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group str
 	if err != nil {
 		return CommitStatus{}, err
 	}
-	log.Printf("Considering statuses %v\n", statuses)
+	var displays = make([]string, len(statuses))
+	for i := range statuses {
+		s := statuses[i]
+		displays = append(displays, fmt.Sprintf("%s: %s (%s)", *s.Context, *s.State, *s.Description))
+	}
+	log.Printf("Considering statuses %v\n", displays)
 
 	name := fmt.Sprintf("%s-%s", group, env)
 	for _, s := range statuses {
