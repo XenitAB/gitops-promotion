@@ -11,10 +11,10 @@ import (
 // difference to PromoteCommand is that it does not use a previous PR to create the first PR.
 func NewCommand(ctx context.Context, cfg config.Config, repo *git.Repository, group, app, tag string) (string, error) {
 	state := git.PRState{
-		Env:   "",
 		Group: group,
 		App:   app,
 		Tag:   tag,
+		Env:   "",
 		Sha:   "",
 	}
 	return promote(ctx, cfg, repo, &state)

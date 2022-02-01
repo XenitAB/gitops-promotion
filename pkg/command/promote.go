@@ -24,29 +24,37 @@ func PromoteCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 	return promote(ctx, cfg, repo, &pr.State)
 }
 
-func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state *git.PRState) (string, error) {
-	if state.GetPRType() == git.PRTypePromote {
+func promote(ctx context.Context, cfg config.Config, repo *git.Repository, previousState *git.PRState) (string, error) {
+	if previousState.GetPRType() == git.PRTypePromote {
 		return "not promoting feature branch", nil
 	}
+	if !cfg.HasNextEnvironment(previousState.Env) {
+		return "no next environment to promote to", nil
+	}
 
-	// Check if there is a next env or get next env
-	if state.Env != cfg.Environments[0].Name {
-		if !cfg.HasNextEnvironment(state.Env) {
-			return "no next environment to promote to", nil
-		}
-		nextEnv, err := cfg.NextEnvironment(state.Env)
+	// Create the next stat
+	var env string
+	if previousState.Env == "" {
+		env = cfg.Environments[0].Name
+	} else {
+		nextEnv, err := cfg.NextEnvironment(previousState.Env)
 		if err != nil {
 			return "", fmt.Errorf("could not get next environment: %w", err)
 		}
-		state.Env = nextEnv.Name
+		env = nextEnv.Name
 	}
-
-	// Set sha to be included in the next PR
 	headID, err := repo.GetCurrentCommit()
 	if err != nil {
 		return "", fmt.Errorf("could not get latest commit: %w", err)
 	}
-	state.Sha = headID.String()
+	state := &git.PRState{
+		Group: previousState.Group,
+		App:   previousState.App,
+		Tag:   previousState.Tag,
+		Env:   env,
+		Sha:   headID.String(),
+		Type:  previousState.Type,
+	}
 
 	// Update image tag
 	manifestPath := fmt.Sprintf("%s/%s/%s", repo.GetRootDir(), state.Group, state.Env)
