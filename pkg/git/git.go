@@ -38,11 +38,7 @@ func LoadRepository(ctx context.Context, path string, providerTypeString string,
 	if err != nil {
 		return nil, fmt.Errorf("could not get remote: %w", err)
 	}
-	providerType, err := StringToProviderType(providerTypeString)
-	if err != nil {
-		return nil, fmt.Errorf("could not get provider type: %w", err)
-	}
-	provider, err := NewGitProvider(ctx, providerType, remote.Url(), token)
+	provider, err := NewGitProvider(ctx, ProviderType(providerTypeString), remote.Url(), token)
 	if err != nil {
 		return nil, fmt.Errorf("could not create git provider: %w", err)
 	}

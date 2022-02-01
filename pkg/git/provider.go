@@ -3,7 +3,6 @@ package git
 import (
 	"context"
 	"fmt"
-	"strings"
 )
 
 type ProviderType string
@@ -30,16 +29,5 @@ func NewGitProvider(ctx context.Context, providerType ProviderType, remoteURL, t
 		return NewGitHubGITProvider(ctx, remoteURL, token)
 	default:
 		return nil, fmt.Errorf("unknown provider type: %s", providerType)
-	}
-}
-
-func StringToProviderType(p string) (ProviderType, error) {
-	switch strings.ToLower(p) {
-	case string(ProviderTypeAzdo):
-		return ProviderTypeAzdo, nil
-	case string(ProviderTypeGitHub):
-		return ProviderTypeGitHub, nil
-	default:
-		return "", fmt.Errorf("Unknown provider selected: %s", p)
 	}
 }
