@@ -21,44 +21,38 @@ func PromoteCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 		//lint:ignore nilerr should not return error
 		return "skipping PR creation as commit does not originate from promotion PR", nil
 	}
-	return promote(ctx, cfg, repo, &pr.State)
-}
-
-func promote(ctx context.Context, cfg config.Config, repo *git.Repository, previousState *git.PRState) (string, error) {
-	if previousState.GetPRType() == git.PRTypePromote {
-		return "not promoting feature branch", nil
+	if pr.State == nil {
+		return "pull request is not created by gitops-promotion", nil
 	}
-	if !cfg.HasNextEnvironment(previousState.Env) {
+	if pr.State.GetPRType() == git.PRTypeFeature {
+		return "skipping promotion of feature", nil
+	}
+	if !cfg.HasNextEnvironment(pr.State.Env) {
 		return "no next environment to promote to", nil
-	}
-
-	// Create the next stat
-	var env string
-	if previousState.Env == "" {
-		env = cfg.Environments[0].Name
-	} else {
-		nextEnv, err := cfg.NextEnvironment(previousState.Env)
-		if err != nil {
-			return "", fmt.Errorf("could not get next environment: %w", err)
-		}
-		env = nextEnv.Name
 	}
 	headID, err := repo.GetCurrentCommit()
 	if err != nil {
 		return "", fmt.Errorf("could not get latest commit: %w", err)
 	}
-	state := &git.PRState{
-		Group: previousState.Group,
-		App:   previousState.App,
-		Tag:   previousState.Tag,
-		Env:   env,
-		Sha:   headID.String(),
-		Type:  previousState.Type,
+	nextEnv, err := cfg.NextEnvironment(pr.State.Env)
+	if err != nil {
+		return "", fmt.Errorf("could not get next environment: %w", err)
 	}
+	state := &git.PRState{
+		Group: pr.State.Group,
+		App:   pr.State.App,
+		Tag:   pr.State.Tag,
+		Env:   nextEnv.Name,
+		Sha:   headID.String(),
+		Type:  pr.State.Type,
+	}
+	return promote(ctx, cfg, repo, state)
+}
 
+func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state *git.PRState) (string, error) {
 	// Update image tag
 	manifestPath := fmt.Sprintf("%s/%s/%s", repo.GetRootDir(), state.Group, state.Env)
-	err = manifest.UpdateImageTag(manifestPath, state.App, state.Group, state.Tag)
+	err := manifest.UpdateImageTag(manifestPath, state.App, state.Group, state.Tag)
 	if err != nil {
 		return "", fmt.Errorf("failed updating manifests: %w", err)
 	}
