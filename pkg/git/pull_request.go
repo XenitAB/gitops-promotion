@@ -44,10 +44,10 @@ const (
 )
 
 type PRState struct {
-	Env   string `json:"env"`
 	Group string `json:"group"`
 	App   string `json:"app"`
 	Tag   string `json:"tag"`
+	Env   string `json:"env"`
 	Sha   string `json:"sha"`
 	Type  PRType `json:"type"`
 }

@@ -52,13 +52,9 @@ func LoadConfig(file io.Reader) (Config, error) {
 	return cfg, err
 }
 
-func (c Config) PrevEnvironment(envName string) (Environment, error) {
-	for i, e := range c.Environments {
-		if e.Name == envName {
-			return c.Environments[i-1], nil
-		}
-	}
-	return Environment{}, errors.New("could not find prev environment")
+func (c Config) HasNextEnvironment(envName string) bool {
+	last := len(c.Environments) - 1
+	return c.Environments[last].Name != envName
 }
 
 func (c Config) NextEnvironment(envName string) (Environment, error) {
@@ -70,9 +66,13 @@ func (c Config) NextEnvironment(envName string) (Environment, error) {
 	return Environment{}, errors.New("could not find next environment")
 }
 
-func (c Config) HasNextEnvironment(envName string) bool {
-	last := len(c.Environments) - 1
-	return c.Environments[last].Name != envName
+func (c Config) PrevEnvironment(envName string) (Environment, error) {
+	for i, e := range c.Environments {
+		if e.Name == envName {
+			return c.Environments[i-1], nil
+		}
+	}
+	return Environment{}, errors.New("could not find prev environment")
 }
 
 func (c Config) IsEnvironmentAutomated(name string) (bool, error) {
@@ -81,7 +81,6 @@ func (c Config) IsEnvironmentAutomated(name string) (bool, error) {
 			return e.Automated, nil
 		}
 	}
-
 	return false, fmt.Errorf("could not find environment with name %q", name)
 }
 
