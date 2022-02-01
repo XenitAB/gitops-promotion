@@ -11,7 +11,7 @@ import (
 )
 
 // UpdateImageTag changes the image tag in the kustomization file.
-// TODO: Should change from using absolute paths.
+// TODO: Should change to using fs objects.
 func UpdateImageTag(path, app, group, tag string) error {
 	policies := []imagev1_reflect.ImagePolicy{
 		{

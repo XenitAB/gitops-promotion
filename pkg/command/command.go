@@ -17,12 +17,13 @@ const (
 	configFileName = "gitops-promotion.yaml"
 )
 
-//nolint:funlen // just one off
+// nolint:funlen,cyclop // ignore
 func Run(ctx context.Context, args []string) (string, error) {
-	// Global flags
 	if len(args) < 2 {
 		return "", fmt.Errorf("new, feature, promote, or status subcommand is required")
 	}
+
+	// Global flags
 	defaultPath, err := os.Getwd()
 	if err != nil {
 		return "", err
