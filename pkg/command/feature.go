@@ -44,7 +44,11 @@ func FeatureCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 	if err != nil {
 		return "", fmt.Errorf("could not push changes: %w", err)
 	}
-	prid, err := repo.CreatePR(ctx, branchName, true, &state)
+	auto, err := cfg.IsEnvironmentAutomated(state.Env)
+	if err != nil {
+		return "", fmt.Errorf("could not get environment automation state: %w", err)
+	}
+	prid, err := repo.CreatePR(ctx, branchName, auto, &state)
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}
