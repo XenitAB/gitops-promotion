@@ -18,11 +18,11 @@ type Feature map[string]map[string]FeatureApp
 func (f Feature) GetFeatureApp(group, app string) (FeatureApp, error) {
 	featureGroup, ok := f[group]
 	if !ok {
-		return FeatureApp{}, fmt.Errorf("group not found: %s", group)
+		return FeatureApp{}, fmt.Errorf("feature group not found in configuration: %s", group)
 	}
 	featureApp, ok := featureGroup[app]
 	if !ok {
-		return FeatureApp{}, fmt.Errorf("app not found: %s", app)
+		return FeatureApp{}, fmt.Errorf("feature app not found in configuration: %s", app)
 	}
 	return featureApp, nil
 }
