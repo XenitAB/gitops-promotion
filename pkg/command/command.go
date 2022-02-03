@@ -17,7 +17,6 @@ const (
 	configFileName = "gitops-promotion.yaml"
 )
 
-//nolint:funlen // just one off
 func Run(ctx context.Context, args []string) (string, error) {
 	// Global flags
 	if len(args) < 2 {
@@ -64,12 +63,10 @@ func Run(ctx context.Context, args []string) (string, error) {
 	}
 	repo, err := git.LoadRepository(ctx, tmpPath, *providerType, *token)
 	if err != nil {
-		return "", fmt.Errorf("could not load repository: %w", err)
+		return "", fmt.Errorf("could not load %s repository: %w", *providerType, err)
 	}
 
 	// Run Command
-	cancelCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	switch args[1] {
 	case "new":
 		newCommand := flag.NewFlagSet(args[1], flag.ExitOnError)
@@ -81,11 +78,11 @@ func Run(ctx context.Context, args []string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return NewCommand(cancelCtx, cfg, repo, *group, *app, *tag)
+		return NewCommand(ctx, cfg, repo, *group, *app, *tag)
 	case "promote":
-		return PromoteCommand(cancelCtx, cfg, repo)
+		return PromoteCommand(ctx, cfg, repo)
 	case "status":
-		return StatusCommand(cancelCtx, cfg, repo)
+		return StatusCommand(ctx, cfg, repo)
 	default:
 		return "", fmt.Errorf("Unknown command: %s", args[1])
 	}

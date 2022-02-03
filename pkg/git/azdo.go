@@ -155,7 +155,7 @@ func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto 
 	return *pr.PullRequestId, err
 }
 
-func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (Status, error) {
+func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group string, env string) (CommitStatus, error) {
 	args := git.GetStatusesArgs{
 		Project:      &g.proj,
 		RepositoryId: &g.repo,
@@ -163,7 +163,7 @@ func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group strin
 	}
 	statuses, err := g.client.GetStatuses(ctx, args)
 	if err != nil {
-		return Status{}, err
+		return CommitStatus{}, err
 	}
 	genre := "fluxcd"
 	name := fmt.Sprintf("%s-%s", group, env)
@@ -171,15 +171,15 @@ func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group strin
 		s := (*statuses)[i]
 		comp := strings.Split(*s.Context.Name, "/")
 		if len(comp) != 2 {
-			return Status{}, fmt.Errorf("status name in wrong format: %q", *s.Context.Name)
+			return CommitStatus{}, fmt.Errorf("status name in wrong format: %q", *s.Context.Name)
 		}
 		if *s.Context.Genre == genre && comp[1] == name {
-			return Status{
+			return CommitStatus{
 				Succeeded: *s.State == git.GitStatusStateValues.Succeeded,
 			}, nil
 		}
 	}
-	return Status{}, fmt.Errorf("no status found for sha %q", sha)
+	return CommitStatus{}, fmt.Errorf("no status found for sha %q", sha)
 }
 
 func (g *AzdoGITProvider) SetStatus(ctx context.Context, sha string, group string, env string, succeeded bool) error {
@@ -250,7 +250,7 @@ func (g *AzdoGITProvider) GetPRWithBranch(ctx context.Context, source, target st
 
 	pr := (*prs)[0]
 
-	result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
+	result, err := NewPullRequest(pr.PullRequestId, pr.Title, pr.Description)
 	if err != nil {
 		return PullRequest{}, err
 	}
@@ -281,7 +281,7 @@ func (g *AzdoGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string)
 	}
 	pr := results[0][sha][0]
 
-	result, err := newPR(pr.PullRequestId, pr.Title, pr.Description, nil)
+	result, err := NewPullRequest(pr.PullRequestId, pr.Title, pr.Description)
 	if err != nil {
 		return PullRequest{}, err
 	}

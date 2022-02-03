@@ -10,13 +10,14 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
+// StatusCommand is run inside a PR to check if the PR can be merged.
 func StatusCommand(ctx context.Context, cfg config.Config, repo *git.Repository) (string, error) {
 	// If branch does not contain promote it was manual, return early
 	branchName, err := repo.GetBranchName()
 	if err != nil {
 		return "", fmt.Errorf("failed to find current branch: %w", err)
 	}
-	if !strings.HasPrefix(branchName, git.PromoteBranchPrefix) {
+	if !strings.HasPrefix(branchName, string(git.PRTypePromote)) {
 		return "Promotion was manual, skipping check", nil
 	}
 
