@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/spf13/afero"
 	"github.com/xenitab/gitops-promotion/pkg/config"
 	"github.com/xenitab/gitops-promotion/pkg/git"
 	"github.com/xenitab/gitops-promotion/pkg/manifest"
@@ -25,7 +26,8 @@ func FeatureCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 	if err != nil {
 		return "", err
 	}
-	err = manifest.DuplicateApplication(repo.GetRootDir(), featureApp.LabelSelector, state)
+	fs := afero.NewBasePathFs(afero.NewOsFs(), repo.GetRootDir())
+	err = manifest.DuplicateApplication(fs, featureApp.LabelSelector, state)
 	if err != nil {
 		return "", err
 	}
