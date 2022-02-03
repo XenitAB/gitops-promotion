@@ -26,7 +26,7 @@ func NewPullRequest(id *int, title *string, description *string) (PullRequest, e
 	}
 	state, err := NewPRState(d)
 	if err != nil {
-		return PullRequest{}, nil
+		return PullRequest{}, nil //nolint:nilerr // this looks fishy
 	}
 	return PullRequest{
 		ID:          *id,

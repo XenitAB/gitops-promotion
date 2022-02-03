@@ -17,7 +17,6 @@ const (
 	configFileName = "gitops-promotion.yaml"
 )
 
-//nolint:funlen // just one off
 func Run(ctx context.Context, args []string) (string, error) {
 	// Global flags
 	if len(args) < 2 {
