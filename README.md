@@ -82,7 +82,9 @@ The `status` command requests statuses on the merge commit that resulted from th
 
 ![Kustomization checks](./assets/kustomization-checks.png)
 
-It keeps looking for that status for some time. If it remains failed after some minutes, the `status` command fails, resulting in a failed check on the pull request, blocking any automatic merging.
+If there is no matching status, it then looks on the head commit of "main" branch. If another commit is added to main before Flux has time to consider the merge commit, the merge commit status will never be set, but a relevant status will eventually be set on "main" branch.
+
+The `status` command keeps looking for statuses for some time. If there is no status after some minutes, the `status` command fails, resulting in a failed check on the pull request, blocking any automatic merging.
 
 ## The GitOps repository
 

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	git "github.com/libgit2/git2go/v31"
 	git2go "github.com/libgit2/git2go/v31"
 )
 
@@ -52,6 +53,29 @@ func LoadRepository(ctx context.Context, path string, providerTypeString string,
 	}, nil
 }
 
+// FetchDefaultBranch updates DefaultBranch with new commits from DefaultRemote.
+func (g *Repository) FetchBranch(branchName string) (*git.Oid, error) {
+	remote, err := g.gitRepository.Remotes.Lookup(DefaultRemote)
+	if err != nil {
+		return nil, fmt.Errorf("could not find remote %q: %w", DefaultRemote, err)
+	}
+	err = remote.Fetch(
+		[]string{branchName},
+		&git2go.FetchOptions{
+			RemoteCallbacks: credentialsCallback(DefaultUsername, g.token),
+		},
+		"",
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch: %w", err)
+	}
+	sha, err := g.GetLastCommitForBranch(fmt.Sprintf("%s/%s", DefaultRemote, DefaultBranch))
+	if err != nil {
+		return nil, fmt.Errorf("fetch failed to lookup head sha: %w", err)
+	}
+	return sha, nil
+}
+
 // GetRootDir returns the file path to the repository.
 func (g *Repository) GetRootDir() string {
 	p := g.gitRepository.Path()
@@ -85,7 +109,7 @@ func (g *Repository) CreateBranch(branchName string, force bool) error {
 
 // GetLastCommitForBranch returns the latest commit id for the branch.
 func (g *Repository) GetLastCommitForBranch(branchName string) (*git2go.Oid, error) {
-	branch, err := g.gitRepository.LookupBranch(branchName, git2go.BranchAll)
+	branch, err := g.gitRepository.LookupBranch(branchName, git2go.BranchRemote)
 	if err != nil {
 		return nil, err
 	}
