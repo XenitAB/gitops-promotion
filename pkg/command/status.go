@@ -38,7 +38,7 @@ func StatusCommand(ctx context.Context, cfg config.Config, repo *git.Repository)
 		return "", err
 	}
 	// TODO: Check if current commit is stale
-	deadline := time.Now().Add(5 * time.Minute)
+	deadline := time.Now().Add(cfg.StatusTimeout)
 	for {
 		if time.Now().After(deadline) {
 			break
