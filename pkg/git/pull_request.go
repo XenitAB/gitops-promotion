@@ -26,7 +26,7 @@ func NewPullRequest(id *int, title *string, description *string) (PullRequest, e
 	}
 	state, err := NewPRState(d)
 	if err != nil {
-		return PullRequest{}, nil //nolint:nilerr // this looks fishy
+		return PullRequest{}, nil
 	}
 	return PullRequest{
 		ID:          *id,
@@ -40,6 +40,7 @@ type PRType string
 
 const (
 	PRTypePromote PRType = "promote"
+	PRTypeFeature PRType = "feature"
 )
 
 type PRState struct {
@@ -88,6 +89,8 @@ func (p *PRState) Title() string {
 	switch p.GetPRType() {
 	case PRTypePromote:
 		return fmt.Sprintf("Promote %s/%s version %s to environment %s", p.Group, p.App, p.Tag, p.Env)
+	case PRTypeFeature:
+		return fmt.Sprintf("Review %s/%s feature %s in environment %s", p.Group, p.App, p.Tag, p.Env)
 	default:
 		return ""
 	}

@@ -26,6 +26,9 @@ func StatusCommand(ctx context.Context, cfg config.Config, repo *git.Repository)
 	if err != nil {
 		return "", fmt.Errorf("failed getting pr for current branch: %w", err)
 	}
+	if pr.State.GetPRType() == git.PRTypeFeature {
+		return "Automatically allowing feature branch PR", nil
+	}
 
 	// Skip the status check if this is the first environment
 	if cfg.Environments[0].Name == pr.State.Env {
