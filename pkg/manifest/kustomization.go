@@ -2,10 +2,10 @@ package manifest
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/afero"
 	appsv1 "k8s.io/api/apps/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -13,34 +13,34 @@ import (
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/resource"
 	kustypes "sigs.k8s.io/kustomize/api/types"
-	"sigs.k8s.io/kustomize/kyaml/filesys"
-	"sigs.k8s.io/yaml"
+	"sigs.k8s.io/kustomize/kyaml/yaml"
 
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-// TODO: Should change to using fs objects.
+// DuplicateApplication duplicates the application manifests based on the label selector.
+// It assumes that the fs is a base fs in the repository directory.
 // nolint:gocritic // ignore
-func DuplicateApplication(repoPath string, labelSelector map[string]string, state git.PRState) error {
-	envPath := filepath.Join(repoPath, state.Group, state.Env)
-	featurePath := filepath.Join(envPath, state.App)
+func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state git.PRState) error {
+	envPath := filepath.Join(state.Group, state.Env)
+	featurePath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Tag))
+	kustomizationPath := filepath.Join(envPath, "kustomization.yaml")
 
 	// Get manifests for the application
 	selector, err := toKustomizeSelector(labelSelector)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not convert to kustomize selector: %w", err)
 	}
-	resources, err := manfifestsMatchingSelector(envPath, selector)
+	resources, err := manfifestsMatchingSelector(fs, envPath, selector)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not get manifets from selector: %w", err)
 	}
 
-	// Write manifets to feature directory
+	// Create feature manifest directory
 	kustomization := &kustypes.Kustomization{}
 	kustomization.NameSuffix = state.Tag
 	kustomization.CommonLabels = map[string]string{"feature": state.Tag}
-	err = os.Mkdir(filepath.Join(envPath, state.App), 0755)
-	if err != nil {
+	if err := fs.Mkdir(featurePath, 0755); err != nil {
 		return err
 	}
 	for _, res := range resources {
@@ -49,8 +49,7 @@ func DuplicateApplication(repoPath string, labelSelector map[string]string, stat
 			return err
 		}
 		id := fmt.Sprintf("%s-%s-%s.yaml", res.GetGvk().String(), res.GetNamespace(), res.GetName())
-		err = os.WriteFile(filepath.Join(featurePath, id), b, 0600)
-		if err != nil {
+		if err := afero.WriteFile(fs, filepath.Join(featurePath, id), b, 0600); err != nil {
 			return err
 		}
 		kustomization.Resources = append(kustomization.Resources, id)
@@ -63,29 +62,30 @@ func DuplicateApplication(repoPath string, labelSelector map[string]string, stat
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filepath.Join(featurePath, "kustomization.yaml"), b, 0600)
-	if err != nil {
+	if err := afero.WriteFile(fs, filepath.Join(featurePath, "kustomization.yaml"), b, 0600); err != nil {
 		return err
 	}
 
-	// Append to root kustomization resources
-	kustomizationPath := filepath.Join(envPath, "kustomization.yaml")
-	b, err = os.ReadFile(kustomizationPath)
+	// Append feature kustomization to root resources
+	b, err = afero.ReadFile(fs, kustomizationPath)
 	if err != nil {
 		return err
 	}
-	kustomization = &kustypes.Kustomization{}
-	err = yaml.Unmarshal(b, kustomization)
+	node, err := yaml.Parse(string(b))
 	if err != nil {
 		return err
 	}
-	kustomization.Resources = append(kustomization.Resources, state.App)
-	b, err = yaml.Marshal(kustomization)
+	resourcePath := fmt.Sprintf("%s-%s", state.App, state.Tag)
+	rNode := node.Field("resources")
+	yNode := rNode.Value.YNode()
+	yNode.Content = append(yNode.Content, yaml.NewStringRNode(resourcePath).YNode())
+	rNode.Value.SetYNode(yNode)
+
+	data, err := node.String()
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(kustomizationPath, b, 0600)
-	if err != nil {
+	if err := afero.WriteFile(fs, kustomizationPath, []byte(data), 0600); err != nil {
 		return err
 	}
 
@@ -104,9 +104,9 @@ func toKustomizeSelector(labelSelector map[string]string) (*kustypes.Selector, e
 	return &kustypes.Selector{LabelSelector: selector.String()}, nil
 }
 
-func manfifestsMatchingSelector(path string, selector *kustypes.Selector) ([]*resource.Resource, error) {
+func manfifestsMatchingSelector(fs afero.Fs, path string, selector *kustypes.Selector) ([]*resource.Resource, error) {
 	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
-	resMap, err := k.Run(filesys.MakeFsOnDisk(), path)
+	resMap, err := k.Run(NewKustomizeFs(fs), path)
 	if err != nil {
 		return nil, fmt.Errorf("could not build kustomization: %w", err)
 	}

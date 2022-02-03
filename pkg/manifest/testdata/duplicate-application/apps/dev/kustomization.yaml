@@ -1,0 +1,5 @@
+resources:
+  - ../base
+images:
+  - name: nginx
+    newTag: app # {"$imagepolicy": "apps:nginx:tag"}

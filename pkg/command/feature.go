@@ -16,7 +16,7 @@ func FeatureCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 	state := git.PRState{
 		Env:   cfg.Environments[0].Name,
 		Group: group,
-		App:   fmt.Sprintf("%s-%s", app, tag),
+		App:   app,
 		Tag:   tag,
 		Sha:   "",
 		Type:  git.PRTypeFeature,

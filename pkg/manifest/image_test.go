@@ -89,6 +89,24 @@ why: true
 			expectedErrContains: "",
 			expectedMatch:       false, // This is a know issue: https://github.com/XenitAB/gitops-promotion/issues/32
 		},
+		{
+			state: git.PRState{
+				Env:   "dev",
+				Group: "team1",
+				App:   "app1",
+				Tag:   "v1.0.1",
+			},
+			before: `random: test
+image: "docker.io/foo/bar:1234" # {"$imagepolicy": "team1:app1"}
+why: true
+`,
+			after: `random: test
+image: "docker.io/foo/bar:v1.0.1" # {"$imagepolicy": "team1:app1"}
+why: true
+`,
+			expectedErrContains: "",
+			expectedMatch:       true,
+		},
 	}
 
 	for i, c := range cases {
