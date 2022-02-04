@@ -22,7 +22,7 @@ inputs:
     requires: false
 runs:
   using: docker
-  image: docker://ghcr.io/xenitab/gitops-promotion:v1.0.0-pre2
+  image: docker://ghcr.io/xenitab/gitops-promotion:status-on-main
   entrypoint: /usr/local/bin/action-entrypoint.sh
   env:
     ACTION: ${{ inputs.action }}
