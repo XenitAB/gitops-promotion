@@ -13,6 +13,17 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
+func clone(url, username, password, path, branchName string) error {
+	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
+		FetchOptions: &git2go.FetchOptions{
+			DownloadTags:    git2go.DownloadTagsNone,
+			RemoteCallbacks: git.CredentialsCallback(username, password),
+		},
+		CheckoutBranch: branchName,
+	})
+	return err
+}
+
 func testCloneRepositoryAndValidateTag(t *testing.T, url, username, password, branchName, group, env, app, tag string) string {
 	t.Helper()
 
@@ -41,7 +52,7 @@ func testCloneRepositoryAndValidateTag(t *testing.T, url, username, password, br
 func testCloneRepository(t *testing.T, url, username, password, path, branchName string) {
 	t.Helper()
 
-	err := git.Clone(url, username, password, path, branchName)
+	err := clone(url, username, password, path, branchName)
 	require.NoError(t, err)
 }
 

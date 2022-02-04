@@ -11,9 +11,10 @@ import (
 
 	"github.com/google/go-github/v40/github"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/oauth2"
+
 	"github.com/xenitab/gitops-promotion/pkg/command"
 	"github.com/xenitab/gitops-promotion/pkg/git"
-	"golang.org/x/oauth2"
 )
 
 type providerConfig struct {

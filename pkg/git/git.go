@@ -159,7 +159,7 @@ func (g *Repository) Push(branchName string, force bool) error {
 	}
 
 	branches := []string{fmt.Sprintf("%srefs/heads/%s", forceFlag, branchName)}
-	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: credentialsCallback(DefaultUsername, g.token)})
+	err = remote.Push(branches, &git2go.PushOptions{RemoteCallbacks: CredentialsCallback(DefaultUsername, g.token)})
 	if err != nil {
 		return fmt.Errorf("failed pushing branches %s: %w", branches, err)
 	}
@@ -221,18 +221,7 @@ func (g *Repository) GetPRThatCausedCurrentCommit(ctx context.Context) (PullRequ
 	return pr, err
 }
 
-func Clone(url, username, password, path, branchName string) error {
-	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
-		FetchOptions: &git2go.FetchOptions{
-			DownloadTags:    git2go.DownloadTagsNone,
-			RemoteCallbacks: credentialsCallback(username, password),
-		},
-		CheckoutBranch: branchName,
-	})
-	return err
-}
-
-func credentialsCallback(username, password string) git2go.RemoteCallbacks {
+func CredentialsCallback(username, password string) git2go.RemoteCallbacks {
 	return git2go.RemoteCallbacks{
 		CredentialsCallback: func(url string, usernameFromURL string, allowedTypes git2go.CredentialType) (*git2go.Credential, error) {
 			cred, err := git2go.NewCredentialUserpassPlaintext(username, password)

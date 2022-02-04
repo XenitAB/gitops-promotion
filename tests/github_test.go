@@ -1,4 +1,4 @@
-package git
+package tests
 
 import (
 	"context"
@@ -16,6 +16,8 @@ import (
 	git2go "github.com/libgit2/git2go/v31"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
+	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
 var remoteURL string = os.Getenv("GITHUB_URL")
@@ -26,34 +28,34 @@ func randomBranchName(prefix string) string {
 	return prefix + "-" + uuid.NewString()
 }
 
-func cloneTestRepoOnExistingBranch(ctx context.Context, branchName string) *Repository {
-	providerTypeString := string(ProviderTypeGitHub)
+func cloneTestRepoOnExistingBranch(ctx context.Context, branchName string) *git.Repository {
+	providerTypeString := string(git.ProviderTypeGitHub)
 	tmpDir, e := ioutil.TempDir("", "gitops-promotion")
 	createdRepos = append(createdRepos, tmpDir)
 	Expect(e).To(BeNil())
-	e = Clone(remoteURL, "pat", token, tmpDir, branchName)
+	e = clone(remoteURL, "pat", token, tmpDir, branchName)
 	Expect(e).To(BeNil())
-	repo, e := LoadRepository(ctx, tmpDir, providerTypeString, token)
+	repo, e := git.LoadRepository(ctx, tmpDir, providerTypeString, token)
 	Expect(e).To(BeNil())
 	return repo
 }
 
-func cloneTestRepoWithNewBranch(ctx context.Context, branchName string) *Repository {
-	repo := cloneTestRepoOnExistingBranch(ctx, DefaultBranch)
+func cloneTestRepoWithNewBranch(ctx context.Context, branchName string) *git.Repository {
+	repo := cloneTestRepoOnExistingBranch(ctx, git.DefaultBranch)
 	e := repo.CreateBranch(branchName, false)
 	Expect(e).To(BeNil())
 	return repo
 }
 
-func pushBranch(repo *Repository, branchName string) {
+func pushBranch(repo *git.Repository, branchName string) {
 	e := repo.Push(branchName, true)
 	Expect(e).To(BeNil())
 }
 
-func commitAFile(repo *Repository, branchName string) *git2go.Oid {
+func commitAFile(repo *git.Repository, branchName string) *git2go.Oid {
 	fileName := fmt.Sprintf(
 		"%s/%s.txt",
-		filepath.Dir(strings.TrimRight(repo.gitRepository.Path(), "/")),
+		filepath.Dir(strings.TrimRight(repo.GetRootDir(), "/")),
 		branchName,
 	)
 	f, e := os.Create(fileName)
@@ -89,22 +91,22 @@ var _ = Describe("NewGitHubGITProvider", func() {
 	})
 
 	It("returns error when creating without url", func() {
-		_, err = NewGitHubGITProvider(ctx, "", "foo")
+		_, err = git.NewGitHubGITProvider(ctx, "", "foo")
 		Expect(err).To(MatchError("remoteURL empty"))
 	})
 
 	It("returns error when creating without token", func() {
-		_, err = NewGitHubGITProvider(ctx, "https://github.com/org/repo", "")
+		_, err = git.NewGitHubGITProvider(ctx, "https://github.com/org/repo", "")
 		Expect(err).To(MatchError("token empty"))
 	})
 
 	It("returns error when creating without github address", func() {
-		_, err = NewGitHubGITProvider(ctx, "https://foo.bar/org/repo", "foo")
+		_, err = git.NewGitHubGITProvider(ctx, "https://foo.bar/org/repo", "foo")
 		Expect(err).To(MatchError("host does not start with https://github.com: https://foo.bar"))
 	})
 
 	It("is successfully created when creating with correct token", func() {
-		var provider *GitHubGITProvider
+		var provider *git.GitHubGITProvider
 		remoteURL := os.Getenv("GITHUB_URL")
 		token := os.Getenv("GITHUB_TOKEN")
 
@@ -112,7 +114,7 @@ var _ = Describe("NewGitHubGITProvider", func() {
 			Skip("GITHUB_URL and/or GITHUB_TOKEN environment variables not set")
 		}
 
-		provider, err = NewGitHubGITProvider(ctx, remoteURL, token)
+		provider, err = git.NewGitHubGITProvider(ctx, remoteURL, token)
 		Expect(err).To(BeNil())
 		Expect(remoteURL).To(ContainSubstring(provider.owner))
 		Expect(remoteURL).To(ContainSubstring(provider.repo))
@@ -121,7 +123,7 @@ var _ = Describe("NewGitHubGITProvider", func() {
 
 var _ = Describe("GitHubGITProvider CreatePR", func() {
 	ctx := context.Background()
-	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+	provider, providerErr := git.NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
 		if remoteURL == "" || token == "" {
@@ -137,7 +139,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	var err error
 	var branchName string
 	var auto bool
-	state := &PRState{
+	state := &git.PRState{
 		Env:   "dev",
 		Group: "testgroup",
 		App:   "testapp",
@@ -182,7 +184,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	})
 
 	When("Creating PR on a new branch", func() {
-		var repo *Repository
+		var repo *git.Repository
 
 		BeforeEach(func() {
 			branchName = randomBranchName("empty-branch")
@@ -202,7 +204,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 
 	When("Creating PR on a branch that already has a PR", func() {
 		var origPRId int
-		var repo *Repository
+		var repo *git.Repository
 
 		BeforeEach(func() {
 			var e error
@@ -225,7 +227,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	})
 
 	When("Creating/updating a PR with automerge", func() {
-		var repo *Repository
+		var repo *git.Repository
 
 		BeforeEach(func() {
 			auto = true
@@ -245,7 +247,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 					ctx,
 					provider.owner,
 					provider.repo,
-					DefaultBranch,
+					git.DefaultBranch,
 					&github.ProtectionRequest{
 						EnforceAdmins: true,
 						RequiredStatusChecks: &github.RequiredStatusChecks{
@@ -275,7 +277,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 
 var _ = Describe("GitHubGITProvider GetStatus", func() {
 	ctx := context.Background()
-	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+	provider, providerErr := git.NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
 		if remoteURL == "" || token == "" {
@@ -288,8 +290,8 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 	})
 
 	var err error
-	var status CommitStatus
-	state := &PRState{
+	var status git.CommitStatus
+	state := &git.PRState{
 		Env:   "dev",
 		Group: "testgroup",
 		App:   "testapp",
@@ -317,13 +319,13 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 	})
 
 	When("Getting status of existing sha without status", func() {
-		var repo *Repository
+		var repo *git.Repository
 
 		BeforeEach(func() {
 			var e error
 			repo = cloneTestRepoWithNewBranch(ctx, "ignored")
-			commitAFile(repo, DefaultBranch)
-			pushBranch(repo, DefaultBranch)
+			commitAFile(repo, git.DefaultBranch)
+			pushBranch(repo, git.DefaultBranch)
 
 			sha, e := repo.GetCurrentCommit()
 			Expect(e).To(BeNil())
@@ -363,7 +365,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 
 var _ = Describe("GitHubGITProvider MergePR", func() {
 	ctx := context.Background()
-	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+	provider, providerErr := git.NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
 		if remoteURL == "" || token == "" {
@@ -378,7 +380,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 	var err error
 	var prID int
 	now := time.Now()
-	state := &PRState{
+	state := &git.PRState{
 		Env:   "dev",
 		Group: "testgroup",
 		App:   "testapp",
@@ -415,7 +417,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			_, e := provider.CreatePR(ctx, branchName, false, state)
 			Expect(e).To(BeNil())
 
-			pr, e := provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
+			pr, e := provider.GetPRWithBranch(ctx, branchName, git.DefaultBranch)
 			Expect(e).To(BeNil())
 
 			prID = pr.ID
@@ -429,7 +431,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 
 var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 	ctx := context.Background()
-	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+	provider, providerErr := git.NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
 		if remoteURL == "" || token == "" {
@@ -443,9 +445,9 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 
 	var err error
 	var branchName string
-	var pr PullRequest
+	var pr git.PullRequest
 	now := time.Now()
-	state := &PRState{
+	state := &git.PRState{
 		Env:   "dev",
 		Group: "testgroup",
 		App:   "testapp",
@@ -454,7 +456,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 	}
 
 	JustBeforeEach(func() {
-		pr, err = provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
+		pr, err = provider.GetPRWithBranch(ctx, branchName, git.DefaultBranch)
 	})
 
 	When("Getting PR with empty branchName", func() {
@@ -488,7 +490,7 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 
 var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 	ctx := context.Background()
-	provider, providerErr := NewGitHubGITProvider(ctx, remoteURL, token)
+	provider, providerErr := git.NewGitHubGITProvider(ctx, remoteURL, token)
 
 	BeforeEach(func() {
 		if remoteURL == "" || token == "" {
@@ -501,10 +503,10 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 	})
 
 	var err error
-	var pr PullRequest
-	var mergedPR PullRequest
+	var pr git.PullRequest
+	var mergedPR git.PullRequest
 	now := time.Now()
-	state := &PRState{
+	state := &git.PRState{
 		Env:   "dev",
 		Group: "testgroup",
 		App:   "testapp",
@@ -534,13 +536,13 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			_, e := provider.CreatePR(ctx, branchName, false, state)
 			Expect(e).To(BeNil())
 
-			mergedPR, e = provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
+			mergedPR, e = provider.GetPRWithBranch(ctx, branchName, git.DefaultBranch)
 			Expect(e).To(BeNil())
 
 			e = provider.MergePR(ctx, mergedPR.ID, commitSha.String())
 			Expect(e).To(BeNil())
 
-			repo3 := cloneTestRepoOnExistingBranch(ctx, DefaultBranch)
+			repo3 := cloneTestRepoOnExistingBranch(ctx, git.DefaultBranch)
 			mergeSha, e := repo3.GetCurrentCommit()
 			Expect(e).To(BeNil())
 
