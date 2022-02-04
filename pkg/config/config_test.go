@@ -5,74 +5,131 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/require"
 )
 
-var environmentList = "environments:\n  - name: dev\n    auto: true\n"
+func TestConfigSimple(t *testing.T) {
+	data := `
+    environments:
+      - name: dev
+        auto: true
+      - name: qa
+        auto: true
+      - name: prod
+        auto: false
+  `
+	reader := bytes.NewReader([]byte(data))
+	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
 
-func TestNewGitHubGITProvider(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Config")
+	require.Len(t, cfg.Environments, 3)
+	require.Equal(t, PRFlowTypePerApp, cfg.PRFlow)
+	require.True(t, cfg.IsAnyEnvironmentManual())
+
+	require.True(t, cfg.HasNextEnvironment("dev"))
+	require.True(t, cfg.HasNextEnvironment("qa"))
+	require.False(t, cfg.HasNextEnvironment("prod"))
+
+	_, err = cfg.IsEnvironmentAutomated("foobar")
+	require.EqualError(t, err, "environment named foobar does not exist")
+	automated, err := cfg.IsEnvironmentAutomated("dev")
+	require.NoError(t, err)
+	require.True(t, automated)
+	automated, err = cfg.IsEnvironmentAutomated("qa")
+	require.NoError(t, err)
+	require.True(t, automated)
+	automated, err = cfg.IsEnvironmentAutomated("prod")
+	require.NoError(t, err)
+	require.False(t, automated)
+
+	_, err = cfg.NextEnvironment("foobar")
+	require.EqualError(t, err, "environment named foobar does not exist")
+	next, err := cfg.NextEnvironment("dev")
+	require.NoError(t, err)
+	require.Equal(t, "qa", next.Name)
+	next, err = cfg.NextEnvironment("qa")
+	require.NoError(t, err)
+	require.Equal(t, "prod", next.Name)
+	next, err = cfg.NextEnvironment("prod")
+	require.EqualError(t, err, "last environment cannot have a next environment")
+
+	_, err = cfg.PrevEnvironment("foobar")
+	require.EqualError(t, err, "environment named foobar does not exist")
+	prev, err := cfg.PrevEnvironment("prod")
+	require.NoError(t, err)
+	require.Equal(t, "qa", prev.Name)
+	prev, err = cfg.PrevEnvironment("qa")
+	require.NoError(t, err)
+	require.Equal(t, "dev", prev.Name)
+	prev, err = cfg.PrevEnvironment("dev")
+	require.EqualError(t, err, "first environment cannot have a previous environment")
 }
 
-var _ = Describe("Config", func() {
-	var err error
-	var config Config
-	var configData string = "{}"
+func TestConfigEmptyEnvironments(t *testing.T) {
+	data := `
+    environments: []
+  `
+	reader := bytes.NewReader([]byte(data))
+	_, err := LoadConfig(reader)
+	require.EqualError(t, err, "environments list cannot be empty")
+}
 
-	JustBeforeEach(func() {
-		reader := bytes.NewReader([]byte(configData))
-		config, err = LoadConfig(reader)
-	})
+func TestConfigPRFlowEnv(t *testing.T) {
+	data := `
+    environments:
+      - name: dev
+        auto: true
+    prflow: per-env
+  `
+	reader := bytes.NewReader([]byte(data))
+	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
+	require.Equal(t, PRFlowTypePerEnv, cfg.PRFlow)
+}
 
-	It("returns an error when mandatory values are missing", func() {
-		Expect(err).NotTo(BeNil())
-	})
+func TestConfigPRFlowInvalid(t *testing.T) {
+	data := `
+    environments:
+      - name: dev
+        auto: true
+    prflow: foobar
+  `
+	reader := bytes.NewReader([]byte(data))
+	_, err := LoadConfig(reader)
+	require.EqualError(t, err, "invalid prflow value: foobar")
+}
 
-	Describe("With valid environments list", func() {
-		BeforeEach(func() {
-			configData = environmentList
-		})
+func TestConfigStatusTimeout(t *testing.T) {
+	data := `
+    environments:
+      - name: dev
+        auto: true
+  `
+	reader := bytes.NewReader([]byte(data))
+	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
+	require.Equal(t, 5*time.Minute, cfg.StatusTimeout)
+}
 
-		It("presents environments", func() {
-			Expect(config.Environments).To(ContainElement(Environment{Name: "dev", Automated: true}))
-		})
-	})
+func TestConfigFeature(t *testing.T) {
+	data := `
+    environments:
+      - name: dev
+        auto: true
+    groups:
+      apps:
+        applications:
+          podinfo:
+            featureLabelSelector:
+              app: podinfo
 
-	Describe("Looking at prflow", func() {
-		It("defaults to per-app", func() {
-			Expect(config.PRFlow).To(Equal("per-app"))
-		})
+  `
+	reader := bytes.NewReader([]byte(data))
+	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
+	require.NotEmpty(t, cfg.Groups)
 
-		Describe("When given per-env", func() {
-			BeforeEach(func() {
-				configData = environmentList + "prflow: per-env\n"
-			})
-
-			It("yields per-env", func() {
-				Expect(config.PRFlow).To(Equal("per-env"))
-			})
-		})
-
-		Describe("When given invalid input", func() {
-			BeforeEach(func() {
-				configData = environmentList + "prflow: nonsense\n"
-			})
-
-			It("throws an error", func() {
-				Expect(err).NotTo(BeNil())
-			})
-		})
-	})
-
-	Describe("Looking at status_timeout", func() {
-		BeforeEach(func() {
-			configData = environmentList
-		})
-
-		It("defaults to 5 minutes", func() {
-			Expect(config.StatusTimeout).To(Equal(5 * time.Minute))
-		})
-	})
-})
+	featureLabelSelector, err := cfg.GetFeatureLabelSelector("apps", "podinfo")
+	require.NoError(t, err)
+	require.Equal(t, map[string]string{"app": "podinfo"}, featureLabelSelector)
+}

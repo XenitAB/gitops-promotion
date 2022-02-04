@@ -22,12 +22,12 @@ func FeatureCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 		Sha:   "",
 		Type:  git.PRTypeFeature,
 	}
-	featureApp, err := cfg.Features.GetFeatureApp(state.Group, app)
+	featureLabelSelector, err := cfg.GetFeatureLabelSelector(state.Group, app)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("feature deployment does not work without configuring a feature label selector: %w", err)
 	}
 	fs := afero.NewBasePathFs(afero.NewOsFs(), repo.GetRootDir())
-	err = manifest.DuplicateApplication(fs, featureApp.LabelSelector, state)
+	err = manifest.DuplicateApplication(fs, featureLabelSelector, state)
 	if err != nil {
 		return "", err
 	}
