@@ -3,11 +3,13 @@ package git
 import (
 	"context"
 	"fmt"
+	iofs "io/fs"
 	"log"
 	"path/filepath"
 	"time"
 
 	git2go "github.com/libgit2/git2go/v31"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -28,8 +30,41 @@ type Repository struct {
 }
 
 // LoadRepository loads a local git repository.
-func LoadRepository(ctx context.Context, path string, providerTypeString string, token string) (*Repository, error) {
-	localRepo, err := git2go.OpenRepository(path)
+func LoadRepository(ctx context.Context, fs afero.Fs, path string, providerTypeString string, token string) (*Repository, error) {
+	// Create tmp file system
+	osFs := afero.NewOsFs()
+	tmpPath, err := afero.TempDir(osFs, "", "gitops-promotion-")
+	if err != nil {
+		return nil, err
+	}
+	tmpFs := afero.NewBasePathFs(osFs, tmpPath)
+
+	// Copy repo to temp directory
+	afero.Walk(fs, path, func(path string, info iofs.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			err := tmpFs.Mkdir(path, info.Mode())
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		file, err := fs.Open(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		err = afero.WriteReader(tmpFs, path, file)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+
+	// Load repository
+	localRepo, err := git2go.OpenRepository(tmpPath)
 	if err != nil {
 		return &Repository{}, fmt.Errorf("could not open repository: %w", err)
 	}
@@ -45,11 +80,17 @@ func LoadRepository(ctx context.Context, path string, providerTypeString string,
 	if err != nil {
 		return nil, fmt.Errorf("could not create git provider: %w", err)
 	}
+
 	return &Repository{
 		gitRepository: localRepo,
 		gitProvider:   provider,
 		token:         token,
 	}, nil
+}
+
+// CleanUp deletes any temporary files.
+func (g *Repository) CleanUp() error {
+	return nil
 }
 
 // GetRootDir returns the file path to the repository.
@@ -221,7 +262,7 @@ func (g *Repository) GetPRThatCausedCurrentCommit(ctx context.Context) (PullRequ
 	return pr, err
 }
 
-func Clone(url, username, password, path, branchName string) error {
+/*func Clone(url, username, password, path, branchName string) error {
 	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
 		FetchOptions: &git2go.FetchOptions{
 			DownloadTags:    git2go.DownloadTagsNone,
@@ -230,7 +271,7 @@ func Clone(url, username, password, path, branchName string) error {
 		CheckoutBranch: branchName,
 	})
 	return err
-}
+}*/
 
 func credentialsCallback(username, password string) git2go.RemoteCallbacks {
 	return git2go.RemoteCallbacks{

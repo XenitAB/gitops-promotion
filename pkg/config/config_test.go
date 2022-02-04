@@ -1,11 +1,11 @@
 package config
 
 import (
-	"bytes"
 	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/spf13/afero"
 )
 
 var environmentList = "environments:\n  - name: dev\n    auto: true\n"
@@ -21,8 +21,10 @@ var _ = Describe("Config", func() {
 	var configData string = "{}"
 
 	JustBeforeEach(func() {
-		reader := bytes.NewReader([]byte(configData))
-		config, err = LoadConfig(reader)
+		path := "gitops-promotion.yaml"
+		fs := afero.NewMemMapFs()
+		afero.WriteFile(fs, path, []byte(configData), 0600)
+		config, err = LoadConfig(fs, path)
 	})
 
 	It("returns an error when mandatory values are missing", func() {

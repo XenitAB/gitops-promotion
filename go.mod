@@ -25,40 +25,27 @@ require (
 require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
-	github.com/andybalholm/brotli v1.0.2 // indirect
-	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/fluxcd/pkg/apis/meta v0.10.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
-	github.com/go-openapi/analysis v0.20.1 // indirect
-	github.com/go-openapi/errors v0.20.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.5 // indirect
 	github.com/go-openapi/loads v0.20.2 // indirect
-	github.com/go-openapi/runtime v0.19.28 // indirect
 	github.com/go-openapi/spec v0.20.3 // indirect
-	github.com/go-openapi/strfmt v0.20.1 // indirect
-	github.com/go-openapi/swag v0.19.15 // indirect
-	github.com/go-openapi/validate v0.20.2 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/go-cmp v0.5.6 // indirect
-	github.com/google/go-containerregistry v0.5.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gookit/color v1.4.2 // indirect
 	github.com/jfrog/build-info-go v0.1.6 // indirect
 	github.com/jfrog/gofrog v1.1.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.12.2 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
-	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mholt/archiver/v3 v3.5.1-0.20210618180617-81fac4ba96e4 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -67,12 +54,8 @@ require (
 	github.com/nwaples/rardecode v1.1.0 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
-	github.com/pierrec/lz4/v4 v4.1.6 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
-	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	github.com/xlab/treeprint v1.1.0 // indirect
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	go.mongodb.org/mongo-driver v1.5.1 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
@@ -90,8 +73,29 @@ require (
 	k8s.io/utils v0.0.0-20210930125809-cb0fa318a74b // indirect
 	sigs.k8s.io/controller-runtime v0.11.0 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
-	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
+)
+
+require (
+	github.com/andybalholm/brotli v1.0.2 // indirect
+	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
+	github.com/go-errors/errors v1.1.1 // indirect
+	github.com/go-openapi/analysis v0.20.1 // indirect
+	github.com/go-openapi/errors v0.20.0 // indirect
+	github.com/go-openapi/runtime v0.19.28 // indirect
+	github.com/go-openapi/strfmt v0.20.1 // indirect
+	github.com/go-openapi/swag v0.19.15 // indirect
+	github.com/go-openapi/validate v0.20.2 // indirect
+	github.com/google/go-containerregistry v0.5.0 // indirect
+	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/klauspost/compress v1.12.2 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
+	github.com/pierrec/lz4/v4 v4.1.6 // indirect
+	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
+	github.com/spf13/afero v1.6.0
+	github.com/ulikunitz/xz v0.5.10 // indirect
+	github.com/xlab/treeprint v1.1.0 // indirect
+	sigs.k8s.io/kustomize/kyaml v0.10.17 // indirect
 )
 
 replace github.com/fluxcd/image-automation-controller => github.com/fluxcd/image-automation-controller v0.6.2-0.20210303130129-2eebaa46c79b

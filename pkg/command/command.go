@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
+	"github.com/spf13/afero"
 	flag "github.com/spf13/pflag"
 
 	"github.com/xenitab/gitops-promotion/pkg/config"
@@ -18,7 +18,6 @@ const (
 )
 
 func Run(ctx context.Context, args []string) (string, error) {
-	// Global flags
 	if len(args) < 2 {
 		return "", fmt.Errorf("new, promote or status subcommand is required")
 	}
@@ -36,37 +35,17 @@ func Run(ctx context.Context, args []string) (string, error) {
 		return "", err
 	}
 
-	// Load configuration
-	file, err := os.Open(filepath.Join(*path, configFileName))
-	if err != nil {
-		return "", err
-	}
-	cfg, err := config.LoadConfig(file)
+	osFs := afero.NewOsFs()
+	cfg, err := config.LoadConfig(osFs, filepath.Join(*path, configFileName))
 	if err != nil {
 		return "", fmt.Errorf("could not load config: %w", err)
 	}
-
-	// Load repository
-	tmpPath, err := os.MkdirTemp("", "gitops-promotion-")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		err := fileutils.RemovePath(tmpPath)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Unable to remove path %q, returned error: %s", tmpPath, err)
-		}
-	}()
-	err = fileutils.CopyDir(*path, tmpPath, true, []string{})
-	if err != nil {
-		return "", err
-	}
-	repo, err := git.LoadRepository(ctx, tmpPath, *providerType, *token)
+	repo, err := git.LoadRepository(ctx, osFs, *path, *providerType, *token)
 	if err != nil {
 		return "", fmt.Errorf("could not load %s repository: %w", *providerType, err)
 	}
+	defer repo.CleanUp()
 
-	// Run Command
 	switch args[1] {
 	case "new":
 		newCommand := flag.NewFlagSet(args[1], flag.ExitOnError)

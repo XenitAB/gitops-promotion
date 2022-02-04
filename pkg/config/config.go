@@ -3,8 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io"
 
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 )
 
@@ -18,10 +18,17 @@ type Environment struct {
 	Automated bool   `yaml:"auto"`
 }
 
-func LoadConfig(file io.Reader) (Config, error) {
+func LoadConfig(fs afero.Fs, path string) (Config, error) {
+	b, err := afero.ReadFile(fs, path)
+	if err != nil {
+		return Config{}, err
+	}
 	cfg := Config{}
-	decoder := yaml.NewDecoder(file)
-	err := decoder.Decode(&cfg)
+	err = yaml.Unmarshal(b, &cfg)
+	if err != nil {
+		return Config{}, err
+	}
+
 	if len(cfg.Environments) == 0 {
 		return Config{}, fmt.Errorf("environments list cannot be empty")
 	}
@@ -30,6 +37,7 @@ func LoadConfig(file io.Reader) (Config, error) {
 	} else if cfg.PRFlow != "per-app" && cfg.PRFlow != "per-env" {
 		return Config{}, fmt.Errorf("invalid prflow value %s", cfg.PRFlow)
 	}
+
 	return cfg, err
 }
 
