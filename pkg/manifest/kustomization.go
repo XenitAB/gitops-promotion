@@ -13,10 +13,13 @@ import (
 	"sigs.k8s.io/kustomize/api/krusty"
 	"sigs.k8s.io/kustomize/api/resource"
 	kustypes "sigs.k8s.io/kustomize/api/types"
-	"sigs.k8s.io/kustomize/kyaml/yaml"
+	kyaml "sigs.k8s.io/kustomize/kyaml/yaml"
+	"sigs.k8s.io/yaml"
 
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
+
+const kustomizationFile = "kustomization.yaml"
 
 // DuplicateApplication duplicates the application manifests based on the label selector.
 // It assumes that the fs is a base fs in the repository directory.
@@ -24,7 +27,7 @@ import (
 func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state git.PRState) error {
 	envPath := filepath.Join(state.Group, state.Env)
 	featurePath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Tag))
-	kustomizationPath := filepath.Join(envPath, "kustomization.yaml")
+	kustomizationPath := filepath.Join(envPath, kustomizationFile)
 
 	// Get manifests for the application
 	selector, err := toKustomizeSelector(labelSelector)
@@ -62,7 +65,7 @@ func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state gi
 	if err != nil {
 		return err
 	}
-	if err := afero.WriteFile(fs, filepath.Join(featurePath, "kustomization.yaml"), b, 0600); err != nil {
+	if err := afero.WriteFile(fs, filepath.Join(featurePath, kustomizationFile), b, 0600); err != nil {
 		return err
 	}
 
@@ -71,14 +74,14 @@ func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state gi
 	if err != nil {
 		return err
 	}
-	node, err := yaml.Parse(string(b))
+	node, err := kyaml.Parse(string(b))
 	if err != nil {
 		return err
 	}
 	resourcePath := fmt.Sprintf("%s-%s", state.App, state.Tag)
 	rNode := node.Field("resources")
 	yNode := rNode.Value.YNode()
-	yNode.Content = append(yNode.Content, yaml.NewStringRNode(resourcePath).YNode())
+	yNode.Content = append(yNode.Content, kyaml.NewStringRNode(resourcePath).YNode())
 	rNode.Value.SetYNode(yNode)
 
 	data, err := node.String()

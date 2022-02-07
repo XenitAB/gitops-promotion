@@ -39,3 +39,102 @@ images:
 `
 	require.Equal(t, expectedRootKustomization, string(rootKustomization))
 }
+
+func TestPatchIngress(t *testing.T) {
+	yaml := `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: test
+spec:
+  rules:
+  - host: "foo.bar.com"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: service
+            port:
+              number: 80
+`
+	b, err := patchIngress([]byte(yaml), "foobar")
+	require.NoError(t, err)
+	expectedYaml := `apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: null
+  name: test
+spec:
+  rules:
+  - host: foobar-foo.bar.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: service
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+status:
+  loadBalancer: {}
+`
+	require.Equal(t, expectedYaml, string(b))
+}
+
+func TestPatchDeployment(t *testing.T) {
+	yaml := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+`
+	b, err := patchDeployment([]byte(yaml), "foobar")
+	fmt.Println(string(b))
+	require.NoError(t, err)
+	expectedYaml := `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: nginx
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - image: nginx:foobar
+        name: nginx
+        ports:
+        - containerPort: 80
+        resources: {}
+status: {}
+`
+	require.Equal(t, expectedYaml, string(b))
+}
