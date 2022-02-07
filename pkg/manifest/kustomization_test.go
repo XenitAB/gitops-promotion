@@ -10,21 +10,24 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
+// TODO: Extend testing of edge cases with existing resources
+
 func TestDuplicateApplication(t *testing.T) {
 	osFs := afero.NewBasePathFs(afero.NewOsFs(), "./testdata/duplicate-application")
 	memFs := afero.NewMemMapFs()
 	fs := afero.NewCopyOnWriteFs(osFs, memFs)
 
 	state := git.PRState{
-		Env:   "dev",
-		Group: "apps",
-		App:   "nginx",
-		Tag:   "feature",
+		Group:   "apps",
+		App:     "nginx",
+		Env:     "dev",
+		Tag:     "hash",
+		Feature: "feature",
 	}
-	err := DuplicateApplication(fs, map[string]string{"app": "nginx"}, state)
+	err := DuplicateApplication(fs, state, map[string]string{"app": "nginx"})
 	require.NoError(t, err)
 
-	isDir, err := afero.IsDir(memFs, filepath.Join(state.Group, state.Env, fmt.Sprintf("%s-%s", state.App, state.Tag)))
+	isDir, err := afero.IsDir(memFs, filepath.Join(state.Group, state.Env, fmt.Sprintf("%s-%s", state.App, state.Feature)))
 	require.NoError(t, err)
 	require.True(t, isDir)
 

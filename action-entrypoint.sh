@@ -19,7 +19,8 @@ case $ACTION in
             --token "$TOKEN" \
             --group "$GROUP" \
             --app "$APP" \
-            --tag "$TAG"
+            --tag "$TAG" \
+            --feature "$FEATURE"
         ;;
     promote)
         /usr/local/bin/gitops-promotion promote \

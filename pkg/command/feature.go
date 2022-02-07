@@ -12,27 +12,26 @@ import (
 
 // FeatureCommand is similar to NewCommand but creates a PR with a temporary deployment of the application.
 // A totally new application will be created instead of overriding the existing application deployment.
-func FeatureCommand(ctx context.Context, cfg config.Config, repo *git.Repository, group, app, tag string) (string, error) {
-	// Create new state
+func FeatureCommand(ctx context.Context, cfg config.Config, repo *git.Repository, group, app, tag, feature string) (string, error) {
 	state := git.PRState{
-		Env:   cfg.Environments[0].Name,
-		Group: group,
-		App:   app,
-		Tag:   tag,
-		Sha:   "",
-		Type:  git.PRTypeFeature,
+		Env:     cfg.Environments[0].Name,
+		Group:   group,
+		App:     app,
+		Tag:     tag,
+		Sha:     "",
+		Feature: feature,
+		Type:    git.PRTypeFeature,
 	}
 	featureLabelSelector, err := cfg.GetFeatureLabelSelector(state.Group, app)
 	if err != nil {
 		return "", fmt.Errorf("feature deployment does not work without configuring a feature label selector: %w", err)
 	}
 	fs := afero.NewBasePathFs(afero.NewOsFs(), repo.GetRootDir())
-	err = manifest.DuplicateApplication(fs, featureLabelSelector, state)
+	err = manifest.DuplicateApplication(fs, state, featureLabelSelector)
 	if err != nil {
 		return "", err
 	}
 
-	// Push and create PR
 	branchName := state.BranchName(false)
 	err = repo.CreateBranch(branchName, true)
 	if err != nil {

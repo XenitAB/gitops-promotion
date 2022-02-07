@@ -70,7 +70,7 @@ func toIntPtr(i int) *int {
 }
 
 func TestPRStateValid(t *testing.T) {
-	json := `{"group":"g","app":"a","tag":"t","env":"e","sha":"s","type":"promote"}`
+	json := `{"group":"g","app":"a","tag":"t","env":"e","sha":"s","feature":"","type":"promote"}`
 	description := fmt.Sprintf("<!-- metadata = %s -->\n\tENV: e\n\tAPP: a\n\tTAG: t", json)
 	state, ok, err := NewPRState(description)
 	require.NoError(t, err)
@@ -135,26 +135,28 @@ func TestPRStateBranchName(t *testing.T) {
 		{
 			name: "feature no env",
 			state: PRState{
-				Group: "group",
-				App:   "app",
-				Tag:   "tag",
-				Env:   "dev",
-				Type:  PRTypeFeature,
+				Group:   "group",
+				App:     "app",
+				Tag:     "tag",
+				Env:     "dev",
+				Feature: "feature",
+				Type:    PRTypeFeature,
 			},
 			includeEnv:         false,
-			expectedBranchName: "feature/group-app-tag",
+			expectedBranchName: "feature/group-app-feature",
 		},
 		{
 			name: "feature include env",
 			state: PRState{
-				Group: "group",
-				App:   "app",
-				Tag:   "tag",
-				Env:   "dev",
-				Type:  PRTypeFeature,
+				Group:   "group",
+				App:     "app",
+				Tag:     "tag",
+				Env:     "dev",
+				Feature: "feature",
+				Type:    PRTypeFeature,
 			},
 			includeEnv:         true,
-			expectedBranchName: "feature/dev/group-app-tag",
+			expectedBranchName: "feature/dev/group-app-feature",
 		},
 	}
 	for _, c := range cases {

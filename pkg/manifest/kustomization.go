@@ -24,31 +24,53 @@ const kustomizationFile = "kustomization.yaml"
 // DuplicateApplication duplicates the application manifests based on the label selector.
 // It assumes that the fs is a base fs in the repository directory.
 // nolint:gocritic // ignore
-func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state git.PRState) error {
-	envPath := filepath.Join(state.Group, state.Env)
-
+func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[string]string) error {
 	// Get manifests for the application
 	selector, err := toKustomizeSelector(labelSelector)
 	if err != nil {
 		return fmt.Errorf("could not convert to kustomize selector: %w", err)
 	}
+	envPath := filepath.Join(state.Group, state.Env)
 	resources, err := manfifestsMatchingSelector(fs, envPath, selector)
 	if err != nil {
 		return fmt.Errorf("could not get manifets from selector: %w", err)
 	}
 
-	// Create feature manifest directory
-	kustomization := &kustypes.Kustomization{}
-	kustomization.NameSuffix = state.Tag
-	kustomization.CommonLabels = map[string]string{"feature": state.Tag}
-	appPath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Tag))
+	// Create feature app manifest directory
+	appPath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Feature))
+	dirExists, err := afero.DirExists(fs, appPath)
+	if err != nil {
+		return err
+	}
+	if !dirExists {
+		if err := fs.RemoveAll(appPath); err != nil {
+			return err
+		}
+	}
 	if err := fs.Mkdir(appPath, 0755); err != nil {
 		return err
 	}
+
+	// Write feature app manifests
+	kustomization := &kustypes.Kustomization{}
+	kustomization.NameSuffix = state.Feature
+	kustomization.CommonLabels = map[string]string{"feature": state.Feature}
 	for _, res := range resources {
-		b, err := patchResource(res, state.Tag)
+		b, err := res.AsYAML()
 		if err != nil {
 			return err
+		}
+		switch res.GetKind() {
+		case "Ingress":
+			b, err = patchIngress(b, state.Feature)
+			if err != nil {
+				return err
+			}
+		case "Deployment":
+			b, err = patchDeployment(b, state.Tag)
+			if err != nil {
+				return err
+			}
 		}
 		id := fmt.Sprintf("%s-%s-%s.yaml", res.GetGvk().String(), res.GetNamespace(), res.GetName())
 		if err := afero.WriteFile(fs, filepath.Join(appPath, id), b, 0600); err != nil {
@@ -68,7 +90,7 @@ func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state gi
 		return err
 	}
 
-	// Append feature kustomization to root resources
+	// Append feature kustomization to root resources if it does not exist
 	kustomizationPath := filepath.Join(envPath, kustomizationFile)
 	b, err = afero.ReadFile(fs, kustomizationPath)
 	if err != nil {
@@ -78,12 +100,12 @@ func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state gi
 	if err != nil {
 		return err
 	}
-	resourcePath := fmt.Sprintf("%s-%s", state.App, state.Tag)
+	resourcePath := fmt.Sprintf("%s-%s", state.App, state.Feature)
 	rNode := node.Field("resources")
 	yNode := rNode.Value.YNode()
+	fmt.Println(yNode.Content)
 	yNode.Content = append(yNode.Content, kyaml.NewStringRNode(resourcePath).YNode())
 	rNode.Value.SetYNode(yNode)
-
 	data, err := node.String()
 	if err != nil {
 		return err
@@ -104,7 +126,7 @@ func toKustomizeSelector(labelSelector map[string]string) (*kustypes.Selector, e
 	if selectorString == "" {
 		return nil, fmt.Errorf("selector string should not be empty")
 	}
-	return &kustypes.Selector{LabelSelector: selector.String()}, nil
+	return &kustypes.Selector{LabelSelector: selectorString}, nil
 }
 
 func manfifestsMatchingSelector(fs afero.Fs, path string, selector *kustypes.Selector) ([]*resource.Resource, error) {
@@ -121,21 +143,6 @@ func manfifestsMatchingSelector(fs afero.Fs, path string, selector *kustypes.Sel
 		return nil, fmt.Errorf("returned resources is an empty list")
 	}
 	return resources, nil
-}
-
-func patchResource(res *resource.Resource, feature string) ([]byte, error) {
-	b, err := res.AsYAML()
-	if err != nil {
-		return nil, err
-	}
-	switch res.GetKind() {
-	case "Ingress":
-		return patchIngress(b, feature)
-	case "Deployment":
-		return patchDeployment(b, feature)
-	default:
-		return b, nil
-	}
 }
 
 func patchIngress(b []byte, feature string) ([]byte, error) {

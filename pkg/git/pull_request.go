@@ -44,12 +44,13 @@ func NewPullRequest(id *int, title *string, description *string) (PullRequest, e
 }
 
 type PRState struct {
-	Group string `json:"group"`
-	App   string `json:"app"`
-	Tag   string `json:"tag"`
-	Env   string `json:"env"`
-	Sha   string `json:"sha"`
-	Type  PRType `json:"type"`
+	Group   string `json:"group"`
+	App     string `json:"app"`
+	Tag     string `json:"tag"`
+	Env     string `json:"env"`
+	Sha     string `json:"sha"`
+	Feature string `json:"feature"`
+	Type    PRType `json:"type"`
 }
 
 // NewPRState takes the content of a pull rquest description and coverts
@@ -91,7 +92,7 @@ func (p *PRState) BranchName(includeEnv bool) string {
 	}
 	name := fmt.Sprintf("%s-%s", p.Group, p.App)
 	if p.GetPRType() == PRTypeFeature {
-		name = fmt.Sprintf("%s-%s", name, p.Tag)
+		name = fmt.Sprintf("%s-%s", name, p.Feature)
 	}
 	comps = append(comps, name)
 	return strings.Join(comps, "/")
