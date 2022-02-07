@@ -26,8 +26,6 @@ const kustomizationFile = "kustomization.yaml"
 // nolint:gocritic // ignore
 func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state git.PRState) error {
 	envPath := filepath.Join(state.Group, state.Env)
-	featurePath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Tag))
-	kustomizationPath := filepath.Join(envPath, kustomizationFile)
 
 	// Get manifests for the application
 	selector, err := toKustomizeSelector(labelSelector)
@@ -43,7 +41,8 @@ func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state gi
 	kustomization := &kustypes.Kustomization{}
 	kustomization.NameSuffix = state.Tag
 	kustomization.CommonLabels = map[string]string{"feature": state.Tag}
-	if err := fs.Mkdir(featurePath, 0755); err != nil {
+	appPath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Tag))
+	if err := fs.Mkdir(appPath, 0755); err != nil {
 		return err
 	}
 	for _, res := range resources {
@@ -52,7 +51,7 @@ func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state gi
 			return err
 		}
 		id := fmt.Sprintf("%s-%s-%s.yaml", res.GetGvk().String(), res.GetNamespace(), res.GetName())
-		if err := afero.WriteFile(fs, filepath.Join(featurePath, id), b, 0600); err != nil {
+		if err := afero.WriteFile(fs, filepath.Join(appPath, id), b, 0600); err != nil {
 			return err
 		}
 		kustomization.Resources = append(kustomization.Resources, id)
@@ -65,11 +64,12 @@ func DuplicateApplication(fs afero.Fs, labelSelector map[string]string, state gi
 	if err != nil {
 		return err
 	}
-	if err := afero.WriteFile(fs, filepath.Join(featurePath, kustomizationFile), b, 0600); err != nil {
+	if err := afero.WriteFile(fs, filepath.Join(appPath, kustomizationFile), b, 0600); err != nil {
 		return err
 	}
 
 	// Append feature kustomization to root resources
+	kustomizationPath := filepath.Join(envPath, kustomizationFile)
 	b, err = afero.ReadFile(fs, kustomizationPath)
 	if err != nil {
 		return err

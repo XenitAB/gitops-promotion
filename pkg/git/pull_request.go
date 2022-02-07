@@ -31,9 +31,9 @@ func NewPullRequest(id *int, title *string, description *string) (PullRequest, e
 	if description != nil {
 		d = *description
 	}
-	state, err := NewPRState(d)
+	state, _, err := NewPRState(d)
 	if err != nil {
-		return PullRequest{}, nil //nolint:nilerr // this looks fishy
+		return PullRequest{}, err
 	}
 	return PullRequest{
 		ID:          *id,
@@ -52,15 +52,18 @@ type PRState struct {
 	Type  PRType `json:"type"`
 }
 
-func NewPRState(body string) (*PRState, error) {
+// NewPRState takes the content of a pull rquest description and coverts
+// it to a PRState. No error will be returned if the description does not
+// contain state metadata, but the bool value will be false.
+func NewPRState(description string) (*PRState, bool, error) {
 	// Check if the body contains state data. If it does not it should return nil.
-	comp := strings.Split(body, " -->")
+	comp := strings.Split(description, " -->")
 	if len(comp) < 2 {
-		return nil, nil
+		return nil, false, nil
 	}
 	comp = strings.Split(comp[0], "<!-- metadata = ")
 	if len(comp) < 2 {
-		return nil, nil
+		return nil, false, nil
 	}
 
 	// Parse the state json data
@@ -68,9 +71,9 @@ func NewPRState(body string) (*PRState, error) {
 	prState := &PRState{}
 	err := json.Unmarshal([]byte(out), prState)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
-	return prState, nil
+	return prState, true, nil
 }
 
 func (p *PRState) GetPRType() PRType {
@@ -82,10 +85,16 @@ func (p *PRState) GetPRType() PRType {
 }
 
 func (p *PRState) BranchName(includeEnv bool) string {
+	comps := []string{string(p.GetPRType())}
 	if includeEnv {
-		return fmt.Sprintf("%s/%s/%s-%s", p.GetPRType(), p.Env, p.Group, p.App)
+		comps = append(comps, p.Env)
 	}
-	return fmt.Sprintf("%s/%s-%s", p.GetPRType(), p.Group, p.App)
+	name := fmt.Sprintf("%s-%s", p.Group, p.App)
+	if p.GetPRType() == PRTypeFeature {
+		name = fmt.Sprintf("%s-%s", name, p.Tag)
+	}
+	comps = append(comps, name)
+	return strings.Join(comps, "/")
 }
 
 func (p *PRState) Title() string {
