@@ -26,7 +26,7 @@ const kustomizationFile = "kustomization.yaml"
 // nolint:gocritic // ignore
 func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[string]string) error {
 	// Get manifests for the application
-	selector, err := toKustomizeSelector(labelSelector)
+	selector, err := toKustomizeSelector(labelSelector, state.Feature)
 	if err != nil {
 		return fmt.Errorf("could not convert to kustomize selector: %w", err)
 	}
@@ -42,7 +42,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	if err != nil {
 		return err
 	}
-	if !dirExists {
+	if dirExists {
 		if err := fs.RemoveAll(appPath); err != nil {
 			return err
 		}
@@ -91,33 +91,36 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	}
 
 	// Append feature kustomization to root resources if it does not exist
-	kustomizationPath := filepath.Join(envPath, kustomizationFile)
-	b, err = afero.ReadFile(fs, kustomizationPath)
-	if err != nil {
-		return err
-	}
-	node, err := kyaml.Parse(string(b))
-	if err != nil {
-		return err
-	}
-	resourcePath := fmt.Sprintf("%s-%s", state.App, state.Feature)
-	rNode := node.Field("resources")
-	yNode := rNode.Value.YNode()
-	fmt.Println(yNode.Content)
-	yNode.Content = append(yNode.Content, kyaml.NewStringRNode(resourcePath).YNode())
-	rNode.Value.SetYNode(yNode)
-	data, err := node.String()
-	if err != nil {
-		return err
-	}
-	if err := afero.WriteFile(fs, kustomizationPath, []byte(data), 0600); err != nil {
-		return err
+	// TODO: Replace with a separate check instead
+	if !dirExists {
+		kustomizationPath := filepath.Join(envPath, kustomizationFile)
+		b, err = afero.ReadFile(fs, kustomizationPath)
+		if err != nil {
+			return err
+		}
+		node, err := kyaml.Parse(string(b))
+		if err != nil {
+			return err
+		}
+		resourcePath := fmt.Sprintf("%s-%s", state.App, state.Feature)
+		rNode := node.Field("resources")
+		yNode := rNode.Value.YNode()
+		fmt.Println(yNode.Content)
+		yNode.Content = append(yNode.Content, kyaml.NewStringRNode(resourcePath).YNode())
+		rNode.Value.SetYNode(yNode)
+		data, err := node.String()
+		if err != nil {
+			return err
+		}
+		if err := afero.WriteFile(fs, kustomizationPath, []byte(data), 0600); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
-func toKustomizeSelector(labelSelector map[string]string) (*kustypes.Selector, error) {
+func toKustomizeSelector(labelSelector map[string]string, feature string) (*kustypes.Selector, error) {
 	selector, err := labels.ValidatedSelectorFromSet(labelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("could not create label selector: %w", err)
@@ -126,6 +129,7 @@ func toKustomizeSelector(labelSelector map[string]string) (*kustypes.Selector, e
 	if selectorString == "" {
 		return nil, fmt.Errorf("selector string should not be empty")
 	}
+	selectorString = fmt.Sprintf("%s,feature notin (%s)", selectorString, feature)
 	return &kustypes.Selector{LabelSelector: selectorString}, nil
 }
 
