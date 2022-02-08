@@ -53,7 +53,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 
 	// Write feature app manifests
 	kustomization := &kustypes.Kustomization{}
-	kustomization.NameSuffix = state.Feature
+	kustomization.NameSuffix = fmt.Sprintf("-%s", state.Feature)
 	kustomization.CommonLabels = map[string]string{"feature": state.Feature}
 	for _, res := range resources {
 		b, err := res.AsYAML()
