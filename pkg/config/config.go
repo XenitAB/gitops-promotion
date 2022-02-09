@@ -113,7 +113,7 @@ func (c Config) GetFeatureLabelSelector(group, app string) (map[string]string, e
 	}
 	appObj, ok := groupObj.Applications[app]
 	if !ok {
-		return nil, fmt.Errorf("configuration group %s does not contain app %s", group, app)
+		return nil, fmt.Errorf("configuration for group %s does not contain application %s", group, app)
 	}
 	return appObj.FeatureLabelSelector, nil
 }
