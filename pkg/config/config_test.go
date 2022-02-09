@@ -85,7 +85,7 @@ func TestConfigIsAutomated(t *testing.T) {
 	}
 }
 
-func TestConfigNexPrev(t *testing.T) {
+func TestConfigNextPrev(t *testing.T) {
 	reader := bytes.NewReader([]byte(simpleData))
 	cfg, err := LoadConfig(reader)
 	require.NoError(t, err)
