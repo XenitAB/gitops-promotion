@@ -8,61 +8,134 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfigSimple(t *testing.T) {
-	data := `
-    environments:
-      - name: dev
-        auto: true
-      - name: qa
-        auto: true
-      - name: prod
-        auto: false
-  `
-	reader := bytes.NewReader([]byte(data))
+const simpleData = `
+environments:
+  - name: dev
+    auto: true
+  - name: qa
+    auto: true
+  - name: prod
+    auto: false
+`
+
+func TestConfigParse(t *testing.T) {
+	reader := bytes.NewReader([]byte(simpleData))
 	cfg, err := LoadConfig(reader)
 	require.NoError(t, err)
-
 	require.Len(t, cfg.Environments, 3)
 	require.Equal(t, PRFlowTypePerApp, cfg.PRFlow)
 	require.True(t, cfg.IsAnyEnvironmentManual())
+}
 
-	require.True(t, cfg.HasNextEnvironment("dev"))
-	require.True(t, cfg.HasNextEnvironment("qa"))
-	require.False(t, cfg.HasNextEnvironment("prod"))
+func TestConfigHasNext(t *testing.T) {
+	reader := bytes.NewReader([]byte(simpleData))
+	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
+	cases := []struct {
+		environment string
+		hasNext     bool
+	}{
+		{
+			environment: "dev",
+			hasNext:     true,
+		},
+		{
+			environment: "qa",
+			hasNext:     true,
+		},
+		{
+			environment: "prod",
+			hasNext:     false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.environment, func(t *testing.T) {
+			require.Equal(t, c.hasNext, cfg.HasNextEnvironment(c.environment))
+		})
+	}
+}
 
+func TestConfigIsAutomated(t *testing.T) {
+	reader := bytes.NewReader([]byte(simpleData))
+	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
+	cases := []struct {
+		environment string
+		isAutomated bool
+	}{
+		{
+			environment: "dev",
+			isAutomated: true,
+		},
+		{
+			environment: "qa",
+			isAutomated: true,
+		},
+		{
+			environment: "prod",
+			isAutomated: false,
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.environment, func(t *testing.T) {
+			automated, err := cfg.IsEnvironmentAutomated(c.environment)
+			require.NoError(t, err)
+			require.Equal(t, c.isAutomated, automated)
+		})
+	}
+}
+
+func TestConfigNexPrev(t *testing.T) {
+	reader := bytes.NewReader([]byte(simpleData))
+	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
+	cases := []struct {
+		environment     string
+		nextEnvironment string
+		prevEnvironment string
+	}{
+		{
+			environment:     "dev",
+			nextEnvironment: "qa",
+		},
+		{
+			environment:     "qa",
+			nextEnvironment: "prod",
+			prevEnvironment: "dev",
+		},
+		{
+			environment:     "prod",
+			prevEnvironment: "qa",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.environment, func(t *testing.T) {
+			e, err := cfg.NextEnvironment(c.environment)
+			if cfg.Environments[len(cfg.Environments)-1].Name == c.environment {
+				require.EqualError(t, err, "last environment cannot have a next environment")
+			} else {
+				require.Equal(t, c.nextEnvironment, e.Name)
+			}
+
+			e, err = cfg.PrevEnvironment(c.environment)
+			if cfg.Environments[0].Name == c.environment {
+				require.EqualError(t, err, "first environment cannot have a previous environment")
+			} else {
+				require.Equal(t, c.prevEnvironment, e.Name)
+			}
+		})
+	}
+}
+
+func TestConfigNotFound(t *testing.T) {
+	reader := bytes.NewReader([]byte(simpleData))
+	cfg, err := LoadConfig(reader)
 	_, err = cfg.IsEnvironmentAutomated("foobar")
 	require.EqualError(t, err, "environment named foobar does not exist")
-	automated, err := cfg.IsEnvironmentAutomated("dev")
-	require.NoError(t, err)
-	require.True(t, automated)
-	automated, err = cfg.IsEnvironmentAutomated("qa")
-	require.NoError(t, err)
-	require.True(t, automated)
-	automated, err = cfg.IsEnvironmentAutomated("prod")
-	require.NoError(t, err)
-	require.False(t, automated)
-
 	_, err = cfg.NextEnvironment("foobar")
 	require.EqualError(t, err, "environment named foobar does not exist")
-	next, err := cfg.NextEnvironment("dev")
-	require.NoError(t, err)
-	require.Equal(t, "qa", next.Name)
-	next, err = cfg.NextEnvironment("qa")
-	require.NoError(t, err)
-	require.Equal(t, "prod", next.Name)
-	next, err = cfg.NextEnvironment("prod")
-	require.EqualError(t, err, "last environment cannot have a next environment")
-
 	_, err = cfg.PrevEnvironment("foobar")
 	require.EqualError(t, err, "environment named foobar does not exist")
-	prev, err := cfg.PrevEnvironment("prod")
-	require.NoError(t, err)
-	require.Equal(t, "qa", prev.Name)
-	prev, err = cfg.PrevEnvironment("qa")
-	require.NoError(t, err)
-	require.Equal(t, "dev", prev.Name)
-	prev, err = cfg.PrevEnvironment("dev")
-	require.EqualError(t, err, "first environment cannot have a previous environment")
 }
 
 func TestConfigEmptyEnvironments(t *testing.T) {
