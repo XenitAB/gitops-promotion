@@ -240,6 +240,7 @@ func TestProviderE2E(t *testing.T) {
 			testSetStatus(t, ctx, p.providerType, revMergedProd, group, "prod", p.url, p.password, true)
 
 			// Test feature
+			feature := "foobar"
 			featureCommandMsg, err := testRunCommand(
 				t,
 				path,
@@ -249,17 +250,12 @@ func TestProviderE2E(t *testing.T) {
 				"--group", group,
 				"--app", app,
 				"--tag", tag,
+				"--feature", feature,
 			)
 			require.NoError(t, err)
 
-			featureBranchName := fmt.Sprintf("feature/%s-%s-%s", group, app, tag)
+			featureBranchName := fmt.Sprintf("feature/%s-%s-%s", group, app, feature)
 			require.Contains(t, featureCommandMsg, fmt.Sprintf("created branch %s with pull request", featureBranchName))
-
-			path = testCloneRepositoryAndValidateTag(t, p.url, p.username, p.password, p.defaultBranch, group, "dev", app, tag)
-
-			repoFeature := testGetRepository(t, path)
-			revFeature := testGetRepositoryHeadRevision(t, repoFeature)
-			testSetStatus(t, ctx, p.providerType, revFeature, group, "dev", p.url, p.password, true)
 		})
 		err = testTeardown(ctx, p)
 		require.NoError(t, err)
