@@ -130,6 +130,7 @@ func TestConfigNexPrev(t *testing.T) {
 func TestConfigNotFound(t *testing.T) {
 	reader := bytes.NewReader([]byte(simpleData))
 	cfg, err := LoadConfig(reader)
+	require.NoError(t, err)
 	_, err = cfg.IsEnvironmentAutomated("foobar")
 	require.EqualError(t, err, "environment named foobar does not exist")
 	_, err = cfg.NextEnvironment("foobar")

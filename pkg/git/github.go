@@ -277,6 +277,7 @@ func (g *GitHubGITProvider) GetPRWithBranch(ctx context.Context, source, target 
 	return NewPullRequest(pr.Number, pr.Title, pr.Body)
 }
 
+// nolint:gocognit // ignore
 func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string) (PullRequest, error) {
 	listOpts := &github.PullRequestListOptions{
 		State: "closed",

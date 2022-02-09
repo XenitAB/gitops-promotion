@@ -24,54 +24,27 @@ const kustomizationFile = "kustomization.yaml"
 
 // DuplicateApplication duplicates the application manifests based on the label selector.
 // It assumes that the fs is a base fs in the repository directory.
-// nolint:gocritic // ignore
+// nolint:gocognit,gocritic // ignore
 func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[string]string) error {
-	// Get manifests for the application
-	selector, err := toKustomizeSelector(labelSelector, state.Feature)
-	if err != nil {
-		return fmt.Errorf("could not convert to kustomize selector: %w", err)
-	}
 	envPath := filepath.Join(state.Group, state.Env)
-	resources, err := manfifestsMatchingSelector(fs, envPath, selector)
+
+	// Write feature app manifests
+	appPath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Feature))
+	dirExists, err := createOrReplaceDirectory(fs, appPath)
+	if err != nil {
+		return err
+	}
+	resources, err := manfifestsMatchingSelector(fs, envPath, labelSelector, state.Feature)
 	if err != nil {
 		return fmt.Errorf("could not get manifets from selector: %w", err)
 	}
-
-	// Create feature app manifest directory
-	appPath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Feature))
-	dirExists, err := afero.DirExists(fs, appPath)
-	if err != nil {
-		return err
-	}
-	if dirExists {
-		if err := fs.RemoveAll(appPath); err != nil {
-			return err
-		}
-	}
-	if err := fs.Mkdir(appPath, 0755); err != nil {
-		return err
-	}
-
-	// Write feature app manifests
 	kustomization := &kustypes.Kustomization{}
 	kustomization.NameSuffix = fmt.Sprintf("-%s", state.Feature)
 	kustomization.CommonLabels = map[string]string{"feature": state.Feature}
 	for _, res := range resources {
-		b, err := res.AsYAML()
+		b, err := patchResource(res, state.Tag, state.Feature)
 		if err != nil {
 			return err
-		}
-		switch res.GetKind() {
-		case "Ingress":
-			b, err = patchIngress(b, state.Feature)
-			if err != nil {
-				return err
-			}
-		case "Deployment":
-			b, err = patchDeployment(b, state.Tag)
-			if err != nil {
-				return err
-			}
 		}
 		id := fmt.Sprintf("%s-%s-%s.yaml", res.GetGvk().String(), res.GetNamespace(), res.GetName())
 		if err := afero.WriteFile(fs, filepath.Join(appPath, id), b, 0600); err != nil {
@@ -121,7 +94,23 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	return nil
 }
 
-func toKustomizeSelector(labelSelector map[string]string, feature string) (*kustypes.Selector, error) {
+func createOrReplaceDirectory(fs afero.Fs, path string) (bool, error) {
+	dirExists, err := afero.DirExists(fs, path)
+	if err != nil {
+		return false, err
+	}
+	if dirExists {
+		if err := fs.RemoveAll(path); err != nil {
+			return false, err
+		}
+	}
+	if err := fs.Mkdir(path, 0755); err != nil {
+		return false, err
+	}
+	return dirExists, err
+}
+
+func manfifestsMatchingSelector(fs afero.Fs, path string, labelSelector map[string]string, feature string) ([]*resource.Resource, error) {
 	selector, err := labels.ValidatedSelectorFromSet(labelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("could not create label selector: %w", err)
@@ -131,16 +120,14 @@ func toKustomizeSelector(labelSelector map[string]string, feature string) (*kust
 		return nil, fmt.Errorf("selector string should not be empty")
 	}
 	selectorString = fmt.Sprintf("%s,feature notin (%s)", selectorString, feature)
-	return &kustypes.Selector{LabelSelector: selectorString}, nil
-}
+	kSelector := &kustypes.Selector{LabelSelector: selectorString}
 
-func manfifestsMatchingSelector(fs afero.Fs, path string, selector *kustypes.Selector) ([]*resource.Resource, error) {
 	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 	resMap, err := k.Run(NewKustomizeFs(fs), path)
 	if err != nil {
 		return nil, fmt.Errorf("could not build kustomization: %w", err)
 	}
-	resources, err := resMap.Select(*selector)
+	resources, err := resMap.Select(*kSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -150,16 +137,34 @@ func manfifestsMatchingSelector(fs afero.Fs, path string, selector *kustypes.Sel
 	return resources, nil
 }
 
+func patchResource(res *resource.Resource, tag, feature string) ([]byte, error) {
+	b, err := res.AsYAML()
+	if err != nil {
+		return nil, err
+	}
+	switch res.GetKind() {
+	case "Ingress":
+		b, err = patchIngress(b, feature)
+		if err != nil {
+			return nil, err
+		}
+	case "Deployment":
+		b, err = patchDeployment(b, tag)
+		if err != nil {
+			return nil, err
+		}
+		return b, nil
+	}
+	return b, nil
+}
+
 func patchIngress(b []byte, feature string) ([]byte, error) {
 	ingress := &networkingv1.Ingress{}
 	err := yaml.Unmarshal(b, ingress)
 	if err != nil {
 		return nil, err
 	}
-	reg, err := regexp.Compile("[^a-zA-Z0-9-]+")
-	if err != nil {
-		return nil, err
-	}
+	reg := regexp.MustCompile("[^a-zA-Z0-9-]+")
 	subdomain := reg.ReplaceAllString(feature, "")
 	subdomain = strings.ToLower(subdomain)
 	for i, rule := range ingress.Spec.Rules {
