@@ -3,7 +3,6 @@ package manifest
 import (
 	"fmt"
 	"path/filepath"
-	"regexp"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -164,16 +163,13 @@ func patchIngress(b []byte, feature string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	reg := regexp.MustCompile("[^a-zA-Z0-9-]+")
-	subdomain := reg.ReplaceAllString(feature, "")
-	subdomain = strings.ToLower(subdomain)
 	for i, rule := range ingress.Spec.Rules {
-		ingress.Spec.Rules[i].Host = fmt.Sprintf("%s.%s", subdomain, rule.Host)
+		ingress.Spec.Rules[i].Host = fmt.Sprintf("%s.%s", feature, rule.Host)
 	}
 	// nolint:gocritic // ignore
 	for i, tls := range ingress.Spec.TLS {
 		for j, host := range tls.Hosts {
-			ingress.Spec.TLS[i].Hosts[j] = fmt.Sprintf("%s.%s", subdomain, host)
+			ingress.Spec.TLS[i].Hosts[j] = fmt.Sprintf("%s.%s", feature, host)
 		}
 	}
 	return yaml.Marshal(ingress)

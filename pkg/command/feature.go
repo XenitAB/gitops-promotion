@@ -3,6 +3,8 @@ package command
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/spf13/afero"
 	"github.com/xenitab/gitops-promotion/pkg/config"
@@ -13,6 +15,14 @@ import (
 // FeatureCommand is similar to NewCommand but creates a PR with a temporary deployment of the application.
 // A totally new application will be created instead of overriding the existing application deployment.
 func FeatureCommand(ctx context.Context, cfg config.Config, repo *git.Repository, group, app, tag, feature string) (string, error) {
+	// The feature name has to be alpha numeric or "-" as both Kubernetes
+	// resources and domain names have this requirement. For this reason the
+	// inputed feature name is sanitized to remove any offending characters
+	// and lowercase all characters.
+	reg := regexp.MustCompile("[^a-zA-Z0-9-]+")
+	feature = reg.ReplaceAllString(feature, "")
+	feature = strings.ToLower(feature)
+
 	state := git.PRState{
 		Env:     cfg.Environments[0].Name,
 		Group:   group,

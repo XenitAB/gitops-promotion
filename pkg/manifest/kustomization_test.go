@@ -77,24 +77,6 @@ status:
 			feature:  "baz",
 			expected: "baz.foo.bar.example",
 		},
-		{
-			name:     "uppercase",
-			domain:   "foo.bar.example",
-			feature:  "BAZ",
-			expected: "baz.foo.bar.example",
-		},
-		{
-			name:     "subdomain",
-			domain:   "foo.bar.example",
-			feature:  "weird.sub.domain",
-			expected: "weirdsubdomain.foo.bar.example",
-		},
-		{
-			name:     "dash",
-			domain:   "foo.bar.example",
-			feature:  "this-contains-dash",
-			expected: "this-contains-dash.foo.bar.example",
-		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
