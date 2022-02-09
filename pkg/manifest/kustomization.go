@@ -3,6 +3,7 @@ package manifest
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/afero"
@@ -155,19 +156,25 @@ func patchIngress(b []byte, feature string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	reg, err := regexp.Compile("[^a-zA-Z0-9-]+")
+	if err != nil {
+		return nil, err
+	}
+	subdomain := reg.ReplaceAllString(feature, "")
+	subdomain = strings.ToLower(subdomain)
 	for i, rule := range ingress.Spec.Rules {
-		ingress.Spec.Rules[i].Host = fmt.Sprintf("%s-%s", feature, rule.Host)
+		ingress.Spec.Rules[i].Host = fmt.Sprintf("%s.%s", subdomain, rule.Host)
 	}
 	// nolint:gocritic // ignore
 	for i, tls := range ingress.Spec.TLS {
 		for j, host := range tls.Hosts {
-			ingress.Spec.TLS[i].Hosts[j] = fmt.Sprintf("%s-%s", feature, host)
+			ingress.Spec.TLS[i].Hosts[j] = fmt.Sprintf("%s.%s", subdomain, host)
 		}
 	}
 	return yaml.Marshal(ingress)
 }
 
-func patchDeployment(b []byte, feature string) ([]byte, error) {
+func patchDeployment(b []byte, tag string) ([]byte, error) {
 	deployment := &appsv1.Deployment{}
 	err := yaml.Unmarshal(b, deployment)
 	if err != nil {
@@ -177,7 +184,7 @@ func patchDeployment(b []byte, feature string) ([]byte, error) {
 	// nolint:gocritic // ignore
 	for i, container := range deployment.Spec.Template.Spec.Containers {
 		name, _ := image.Split(container.Image)
-		deployment.Spec.Template.Spec.Containers[i].Image = fmt.Sprintf("%s:%s", name, feature)
+		deployment.Spec.Template.Spec.Containers[i].Image = fmt.Sprintf("%s:%s", name, tag)
 	}
 	return yaml.Marshal(deployment)
 }

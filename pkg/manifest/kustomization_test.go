@@ -44,33 +44,14 @@ images:
 }
 
 func TestPatchIngress(t *testing.T) {
-	yaml := `apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: test
-spec:
-  rules:
-  - host: "foo.bar.com"
-    http:
-      paths:
-      - pathType: Prefix
-        path: "/"
-        backend:
-          service:
-            name: service
-            port:
-              number: 80
-`
-	b, err := patchIngress([]byte(yaml), "foobar")
-	require.NoError(t, err)
-	expectedYaml := `apiVersion: networking.k8s.io/v1
+	yamlTemplate := `apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   creationTimestamp: null
   name: test
 spec:
   rules:
-  - host: foobar-foo.bar.com
+  - host: %s
     http:
       paths:
       - backend:
@@ -83,7 +64,45 @@ spec:
 status:
   loadBalancer: {}
 `
-	require.Equal(t, expectedYaml, string(b))
+
+	cases := []struct {
+		name     string
+		domain   string
+		feature  string
+		expected string
+	}{
+		{
+			name:     "simple",
+			domain:   "foo.bar.example",
+			feature:  "baz",
+			expected: "baz.foo.bar.example",
+		},
+		{
+			name:     "uppercase",
+			domain:   "foo.bar.example",
+			feature:  "BAZ",
+			expected: "baz.foo.bar.example",
+		},
+		{
+			name:     "subdomain",
+			domain:   "foo.bar.example",
+			feature:  "weird.sub.domain",
+			expected: "weirdsubdomain.foo.bar.example",
+		},
+		{
+			name:     "dash",
+			domain:   "foo.bar.example",
+			feature:  "this-contains-dash",
+			expected: "this-contains-dash.foo.bar.example",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			b, err := patchIngress([]byte(fmt.Sprintf(yamlTemplate, c.domain)), c.feature)
+			require.NoError(t, err)
+			require.Equal(t, fmt.Sprintf(yamlTemplate, c.expected), string(b))
+		})
+	}
 }
 
 func TestPatchDeployment(t *testing.T) {
