@@ -19,10 +19,10 @@ func PromoteCommand(ctx context.Context, cfg config.Config, repo *git.Repository
 		sha, _ := repo.GetCurrentCommit()
 		log.Printf("Failed retrieving pull request for commit %s: %v", sha, err)
 		//lint:ignore nilerr should not return error
-		return "skipping PR creation as commit does not originate from promotion PR", nil
+		return "skipping promotion as commit does not originate from PR", nil
 	}
 	if pr.State == nil {
-		return "pull request is not created by gitops-promotion", nil
+		return "skipping promotion as PR is not created by gitops-promotion", nil
 	}
 	if pr.State.GetPRType() == git.PRTypeFeature {
 		return "skipping promotion of feature", nil
