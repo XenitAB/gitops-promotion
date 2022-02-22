@@ -19,7 +19,10 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-const kustomizationFile = "kustomization.yaml"
+const (
+	kustomizationFile = "kustomization.yaml"
+	featureLabel      = "gitops-promotion.xenit.io/feature"
+)
 
 // DuplicateApplication duplicates the application manifests based on the label selector.
 // It assumes that the fs is a base fs in the repository directory.
@@ -28,24 +31,29 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	envPath := filepath.Join(state.Group, state.Env)
 
 	// Write feature app manifests
+	resources, err := manfifestsMatchingSelector(fs, envPath, labelSelector)
+	if err != nil {
+		return fmt.Errorf("could not get manifets from selector: %w", err)
+	}
 	appPath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Feature))
 	dirExists, err := createOrReplaceDirectory(fs, appPath)
 	if err != nil {
 		return err
 	}
-	resources, err := manfifestsMatchingSelector(fs, envPath, labelSelector, state.Feature)
-	if err != nil {
-		return fmt.Errorf("could not get manifets from selector: %w", err)
+	commonLabels := map[string]string{featureLabel: state.Feature}
+	for k, v := range labelSelector {
+		commonLabels[k] = fmt.Sprintf("%s-%s", v, state.Feature)
 	}
 	kustomization := &kustypes.Kustomization{}
 	kustomization.NameSuffix = fmt.Sprintf("-%s", state.Feature)
-	kustomization.CommonLabels = map[string]string{"feature": state.Feature}
+	kustomization.CommonLabels = commonLabels
 	for _, res := range resources {
 		b, err := patchResource(res, state.Tag, state.Feature)
 		if err != nil {
 			return err
 		}
-		id := fmt.Sprintf("%s-%s-%s.yaml", res.GetGvk().String(), res.GetNamespace(), res.GetName())
+		id := strings.Join([]string{res.GetGvk().String(), res.GetNamespace(), res.GetName()}, "-")
+		id = fmt.Sprintf("%s.yaml", id)
 		if err := afero.WriteFile(fs, filepath.Join(appPath, id), b, 0600); err != nil {
 			return err
 		}
@@ -78,7 +86,6 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 		resourcePath := fmt.Sprintf("%s-%s", state.App, state.Feature)
 		rNode := node.Field("resources")
 		yNode := rNode.Value.YNode()
-		fmt.Println(yNode.Content)
 		yNode.Content = append(yNode.Content, kyaml.NewStringRNode(resourcePath).YNode())
 		rNode.Value.SetYNode(yNode)
 		data, err := node.String()
@@ -109,7 +116,7 @@ func createOrReplaceDirectory(fs afero.Fs, path string) (bool, error) {
 	return dirExists, err
 }
 
-func manfifestsMatchingSelector(fs afero.Fs, path string, labelSelector map[string]string, feature string) ([]*resource.Resource, error) {
+func manfifestsMatchingSelector(fs afero.Fs, path string, labelSelector map[string]string) ([]*resource.Resource, error) {
 	selector, err := labels.ValidatedSelectorFromSet(labelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("could not create label selector: %w", err)
@@ -118,9 +125,8 @@ func manfifestsMatchingSelector(fs afero.Fs, path string, labelSelector map[stri
 	if selectorString == "" {
 		return nil, fmt.Errorf("selector string should not be empty")
 	}
-	selectorString = fmt.Sprintf("%s,feature notin (%s)", selectorString, feature)
+	selectorString = fmt.Sprintf("%s,!%s", selectorString, featureLabel)
 	kSelector := &kustypes.Selector{LabelSelector: selectorString}
-
 	k := krusty.MakeKustomizer(krusty.MakeDefaultOptions())
 	resMap, err := k.Run(NewKustomizeFs(fs), path)
 	if err != nil {

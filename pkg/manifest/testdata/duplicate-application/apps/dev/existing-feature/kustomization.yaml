@@ -1,0 +1,6 @@
+commonLabels:
+  gitops-promotion.xenit.io/feature: existing-feautre
+nameSuffix: -existing-feature
+resources:
+  - deployment.yaml
+  - service.yaml

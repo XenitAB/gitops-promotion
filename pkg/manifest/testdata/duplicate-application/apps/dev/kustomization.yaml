@@ -1,5 +1,6 @@
 resources:
-  - ../base
+- ../base
+- existing-feature
 images:
-  - name: nginx
-    newTag: app # {"$imagepolicy": "apps:nginx:tag"}
+- name: nginx
+  newTag: app # {"$imagepolicy": "apps:nginx:tag"}
