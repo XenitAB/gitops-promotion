@@ -86,6 +86,27 @@ If there is no matching status, it then looks on the head commit of "main" branc
 
 The `status` command keeps looking for statuses for some time. If there is no status after some minutes, the `status` command fails, resulting in a failed check on the pull request, blocking any automatic merging.
 
+### gitops-promotion feature
+
+```shell
+$ gitops-promotion feature --help
+Usage of feature:
+  --app string
+        Name of the application
+  --group string
+        Main application group
+  --provider string
+        git provider to use (default "azdo")
+  --tag string
+        Application version/tag to set
+  --feature strng
+        Application feature
+  --token string
+        Access token (PAT) to git provider
+```
+
+The `feature` command is used to create temporary deployments of applications. Instead of updating the existing application image tag a new copy of all of the applications manifests will be created instead.
+
 ## The GitOps repository
 
 gitops-promotion assumes a repository with a layout like this (excluding CI pipeline definitions). In Flux, this is referred to as a [Monorepo](https://fluxcd.io/docs/guids/repository-structure/#monorepo) layout:
@@ -158,6 +179,12 @@ environments:
     auto: true
   - name: prod
     auto: false
+groups:
+  apps:
+    applications:
+      podinfo:
+        featureLabelSelector:
+          app: podinfo
 ```
 
 | property            | usage                                                                                                                                              |
