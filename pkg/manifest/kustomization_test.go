@@ -12,6 +12,7 @@ import (
 )
 
 func testFileContains(t *testing.T, fs afero.Fs, path string, expectedContent string) {
+	t.Helper()
 	content, err := afero.ReadFile(fs, path)
 	require.NoError(t, err)
 	require.Equal(t, expectedContent, string(content))
