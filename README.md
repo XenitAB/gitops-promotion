@@ -78,7 +78,7 @@ Usage of status:
         Access token (PAT) to git provider
 ```
 
-The `status` command requests statuses on the merge commit that resulted from the previous' environment's pull request. It looks for a status check with context `*/<group>-<env>`. This matches the metadata name of a [Kustomization](https://fluxcd.io/docs/components/kustomize/kustomization/) resource as retported by the Flux Notification controller (in this case group is "apps"):
+The `status` command requests statuses on the merge commit that resulted from the previous' environment's pull request. It looks for a status check with context `*/<group>-<env>`. This matches the metadata name of a [Kustomization](https://fluxcd.io/docs/components/kustomize/kustomization/) resource as reported by the Flux Notification controller (in this case group is "apps"):
 
 ![Kustomization checks](./assets/kustomization-checks.png)
 
@@ -342,7 +342,7 @@ Please note that you will need to make this a required check for merging into ma
 
 ## Troubleshooting
 
-**GitHub PR creation says "could not set auto-merge on PR"**: Your repository is not properly configured to allow pull request auto-merge. Pleae see the configuration section above for information on how to do this.
+**GitHub PR creation says "could not set auto-merge on PR"**: Your repository is not properly configured to allow pull request auto-merge. Please see the configuration section above for information on how to do this.
 
 ## Building
 
