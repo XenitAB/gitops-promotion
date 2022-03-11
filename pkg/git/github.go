@@ -136,7 +136,7 @@ func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, aut
 			log.Printf("Auto-merge activated for PR #%d\n", pr.GetNumber())
 		} else {
 			log.Printf("Failed to activate auto-merge for PR %d: %v", pr.GetNumber(), err)
-			if strings.Contains(err.Error(), "not in the correct state") {
+			if strings.Contains(err.Error(), "Can't enable auto-merge") {
 				err = fmt.Errorf("could not set auto-merge on PR #%d (check auto-merge setting and required checks)", pr.GetNumber())
 			}
 		}
