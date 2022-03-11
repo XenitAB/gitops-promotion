@@ -191,7 +191,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Contains(t, statusCommandMsgQa, "status check has succeed")
+			require.Contains(t, statusCommandMsgQa, "successful reconciliation for testgroup-dev")
 
 			repoQa := testGetRepository(t, path)
 			revQa := testGetRepositoryHeadRevision(t, repoQa)
@@ -228,7 +228,7 @@ func TestProviderE2E(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			require.Contains(t, statusCommandMsgProd, "status check has succeed")
+			require.Contains(t, statusCommandMsgProd, "successful reconciliation for testgroup-qa")
 
 			repoProd := testGetRepository(t, path)
 			revProd := testGetRepositoryHeadRevision(t, repoProd)

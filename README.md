@@ -82,7 +82,9 @@ The `status` command requests statuses on the merge commit that resulted from th
 
 ![Kustomization checks](./assets/kustomization-checks.png)
 
-It keeps looking for that status for some time. If it remains failed after some minutes, the `status` command fails, resulting in a failed check on the pull request, blocking any automatic merging.
+If there is no matching status, it then looks on the head commit of "main" branch. If another commit is added to main before Flux has time to consider the merge commit, the merge commit status will never be set, but a relevant status will eventually be set on "main" branch.
+
+The `status` command keeps looking for statuses for some time. If there is no status after some minutes, the `status` command fails, resulting in a failed check on the pull request, blocking any automatic merging.
 
 ## The GitOps repository
 
@@ -355,3 +357,23 @@ The test suite for the GitHub provider requires access to an actual GitHub repos
 env GITHUB_URL='' GITHUB_TOKEN='' go test ./...
 
 The GitHub Action CI runs the tests against [https://github.com/gitops-promotion/gitops-promotion-testing](https://github.com/gitops-promotion/gitops-promotion-testing).
+
+In order to test interactions manually, you may want to trigger a new promotion. Assuming you are using the example above based on repository-dispatch, the following command will inject a new event:
+
+```shell
+curl -X POST \
+  -H "Authorization: token <PAT>" \
+  -H "Accept: application/vnd.github.v3+json" \
+  -d '{"event_type": "image-push", "client_payload": {"group": "apps", "app": "my-app", "tag": "123456"}}' \
+  https://api.github.com/repos/<org>/<repo>/dispatches
+```
+
+In order to emulate a status update from Flux, use the following command:
+
+```shell
+curl -X POST \
+  -H "Authorization: token <PAT>" \
+  -H "Accept: application/vnd.github.v3+json" \
+  -d '{"state": "success", "context": "kustomization/apps-qa", "description": "reconciliation succeeded"}' \
+  https://api.github.com/repos/<org>/<repo>/commits/<sha>/statuses
+```

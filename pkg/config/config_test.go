@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -62,6 +63,16 @@ var _ = Describe("Config", func() {
 			It("throws an error", func() {
 				Expect(err).NotTo(BeNil())
 			})
+		})
+	})
+
+	Describe("Looking at status_timeout", func() {
+		BeforeEach(func() {
+			configData = environmentList
+		})
+
+		It("defaults to 5 minutes", func() {
+			Expect(config.StatusTimeout).To(Equal(5 * time.Minute))
 		})
 	})
 })

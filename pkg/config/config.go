@@ -4,13 +4,15 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	PRFlow       string        `yaml:"prflow"`
-	Environments []Environment `yaml:"environments"`
+	PRFlow        string        `yaml:"prflow"`
+	StatusTimeout time.Duration `yaml:"status_timeout_minutes"`
+	Environments  []Environment `yaml:"environments"`
 }
 
 type Environment struct {
@@ -29,6 +31,9 @@ func LoadConfig(file io.Reader) (Config, error) {
 		cfg.PRFlow = "per-app"
 	} else if cfg.PRFlow != "per-app" && cfg.PRFlow != "per-env" {
 		return Config{}, fmt.Errorf("invalid prflow value %s", cfg.PRFlow)
+	}
+	if cfg.StatusTimeout.String() == (0 * time.Minute).String() {
+		cfg.StatusTimeout = 5 * time.Minute
 	}
 	return cfg, err
 }
