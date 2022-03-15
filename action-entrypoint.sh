@@ -12,6 +12,16 @@ case $ACTION in
             --app "$APP" \
             --tag "$TAG"
         ;;
+    feature)
+        /usr/local/bin/gitops-promotion feature \
+            --provider github \
+            --sourcedir "$GITHUB_WORKSPACE" \
+            --token "$TOKEN" \
+            --group "$GROUP" \
+            --app "$APP" \
+            --tag "$TAG" \
+            --feature "$FEATURE"
+        ;;
     promote)
         /usr/local/bin/gitops-promotion promote \
             --provider github \

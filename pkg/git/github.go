@@ -277,6 +277,7 @@ func (g *GitHubGITProvider) GetPRWithBranch(ctx context.Context, source, target 
 	return NewPullRequest(pr.Number, pr.Title, pr.Body)
 }
 
+// nolint:gocognit // ignore
 func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string) (PullRequest, error) {
 	listOpts := &github.PullRequestListOptions{
 		State: "closed",
@@ -290,6 +291,13 @@ func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha strin
 				return err
 			}
 			for _, pr := range closedPrs {
+				if pr == nil {
+					continue
+				}
+				// The SHA will be nil if the PR is closed without being merged
+				if pr.MergeCommitSHA == nil {
+					continue
+				}
 				if sha == *pr.MergeCommitSHA {
 					prs = append(prs, pr)
 				}

@@ -5,24 +5,28 @@ description: |
 inputs:
   action:
     description: >
-      Action to perform; one of "new", "promote" or "status". See
+      Action to perform; one of "new", "feature", "promote" or "status". See
       https://github.com/XenitAB/gitops-promotion/README.md for details.
     required: true
   token:
     description: Access token (PAT) to git provider. You probably want secrets.GITHUB_TOKEN
     required: true
   group:
-    description: Main application group; relevant when action is "new"
+    description: Main application group; relevant when action is "new" or "feature"
     required: false
   app:
-    description: Name of the application; relevant when action is "new"
+    description: Name of the application; relevant when action is "new" or "feature"
     required: false
   tag:
-    description: Application version/tag to set; relevant when action is "new"
-    requires: false
+    description: Application version/tag to set; relevant when action is "new" or "feature"
+    required: false
+  feature:
+    description: Feature name; relevant when action is "feature"
+    required: false
 runs:
   using: docker
-  image: docker://ghcr.io/xenitab/gitops-promotion:v1.0.0
+  #image: docker://ghcr.io/xenitab/gitops-promotion:v1.0.0-pre2
+  image: docker://phillebaba/gitops-promotion:branch-deploy
   entrypoint: /usr/local/bin/action-entrypoint.sh
   env:
     ACTION: ${{ inputs.action }}
@@ -30,3 +34,4 @@ runs:
     GROUP: ${{ inputs.group }}
     APP: ${{ inputs.app }}
     TAG: ${{ inputs.tag }}
+    FEATURE: ${{ inputs.feature }}

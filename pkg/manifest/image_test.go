@@ -1,4 +1,4 @@
-package command
+package manifest
 
 import (
 	"fmt"
@@ -105,7 +105,7 @@ why: true
 			t.Errorf("Expected err to be nil: %q", err)
 		}
 
-		err = updateImageTag(dir, c.state.App, c.state.Group, c.state.Tag)
+		err = UpdateImageTag(dir, c.state.App, c.state.Group, c.state.Tag)
 		if err == nil && c.expectedErrContains != "" {
 			t.Errorf("Expected err not to be nil")
 		}

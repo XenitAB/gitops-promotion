@@ -8,48 +8,34 @@ import (
 )
 
 func TestNewGitProvider(t *testing.T) {
-	cases := []struct {
-		testDescription      string
-		providerString       string
-		expectedProviderType ProviderType
-		remoteURL            string
-		token                string
-		expectedError        string
+	tests := []struct {
+		name         string
+		providerType ProviderType
+		remoteURL    string
+		token        string
+		expectedErr  string
 	}{
 		{
-			testDescription:      "azdo provider returns error",
-			providerString:       "azdo",
-			expectedProviderType: ProviderTypeAzdo,
-			remoteURL:            "https://dev.azure.com/organization/project/_git/repository",
-			token:                "fake",
-			expectedError:        "TF400813: The user '' is not authorized to access this resource.",
+			name:         "azdo provider returns error",
+			providerType: ProviderTypeAzdo,
+			remoteURL:    "https://dev.azure.com/organization/project/_git/repository",
+			token:        "fake",
+			expectedErr:  "TF400813: The user '' is not authorized to access this resource.",
 		},
 		{
-			testDescription:      "fake provider returns error",
-			providerString:       "fake",
-			expectedProviderType: "",
-			remoteURL:            "",
-			token:                "",
-			expectedError:        "Unknown provider selected: fake",
+			name:         "fake provider returns error",
+			providerType: ProviderType("fake"),
+			remoteURL:    "",
+			token:        "",
+			expectedErr:  "unknown provider type: fake",
 		},
 	}
 
-	for i, c := range cases {
-		t.Logf("Test iteration %d: %s", i, c.testDescription)
-
-		ctx := context.Background()
-
-		providerType, err := StringToProviderType(c.providerString)
-		if err != nil {
-			require.EqualError(t, err, c.expectedError)
-		}
-
-		if err == nil {
-			require.Equal(t, c.expectedProviderType, providerType)
-			_, err := NewGitProvider(ctx, providerType, c.remoteURL, c.token)
-			if c.expectedError != "" {
-				require.EqualError(t, err, c.expectedError)
-			}
-		}
+	for i, tt := range tests {
+		t.Logf("Test iteration %d: %s", i, tt.name)
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewGitProvider(context.TODO(), tt.providerType, tt.remoteURL, tt.token)
+			require.EqualError(t, err, tt.expectedErr)
+		})
 	}
 }

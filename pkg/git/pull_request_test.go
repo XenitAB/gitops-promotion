@@ -7,117 +7,56 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPRState(t *testing.T) {
-	cases := []struct {
-		state PRState
-	}{
-		{
-			state: PRState{
-				Env:   "ENV_TESTING",
-				Group: "GROUP_TESTING",
-				App:   "APP_TESTING",
-				Tag:   "TAG_TESTING",
-				Sha:   "SHA_TESTING",
-			},
-		},
-	}
-
-	for _, c := range cases {
-		title := c.state.Title()
-		description, err := c.state.Description()
-		require.NoError(t, err)
-		require.Contains(t, title, fmt.Sprintf("Promote %s", c.state.Group))
-		require.Contains(t, description, "<!-- metadata = ")
-		require.Contains(t, description, " -->")
-		require.Contains(t, description, c.state.Env)
-		require.Contains(t, description, c.state.Group)
-		require.Contains(t, description, c.state.App)
-		require.Contains(t, description, c.state.Tag)
-		require.Contains(t, description, c.state.Sha)
-
-		parsedState, err := NewPRState(description)
-		require.NoError(t, err)
-
-		require.Equal(t, c.state.Env, parsedState.Env)
-		require.Equal(t, c.state.Group, parsedState.Group)
-		require.Equal(t, c.state.App, parsedState.App)
-		require.Equal(t, c.state.Tag, parsedState.Tag)
-		require.Equal(t, c.state.Sha, parsedState.Sha)
-	}
-}
-
-func TestNewPR(t *testing.T) {
+func TestNewPullRequest(t *testing.T) {
 	cases := []struct {
 		id          *int
 		title       *string
 		description *string
-		prState     *PRState
 		expectedErr string
 	}{
 		{
 			id:          toIntPtr(1),
 			title:       toStringPtr("testTitle"),
 			description: toStringPtr("test description"),
-			prState:     nil,
 			expectedErr: "",
 		},
 		{
 			id:          toIntPtr(1),
 			title:       toStringPtr("testTitle"),
 			description: toStringPtr("test description"),
-			prState:     &PRState{},
 			expectedErr: "",
 		},
 		{
 			id:          toIntPtr(1),
 			title:       toStringPtr("testTitle"),
 			description: toStringPtr("test description"),
-			prState: &PRState{
-				Env:   "",
-				Group: "",
-				App:   "",
-				Tag:   "",
-				Sha:   "",
-			},
 			expectedErr: "",
 		},
 		{
 			id:          toIntPtr(1),
 			title:       toStringPtr("testTitle"),
 			description: nil,
-			prState:     nil,
 			expectedErr: "",
 		},
 		{
 			id:          nil,
 			title:       toStringPtr("testTitle"),
 			description: toStringPtr("test description"),
-			prState:     nil,
 			expectedErr: "id can't be empty",
 		},
 		{
 			id:          toIntPtr(1),
 			title:       nil,
 			description: toStringPtr("test description"),
-			prState:     nil,
 			expectedErr: "title can't be empty",
 		},
 	}
-
 	for _, c := range cases {
 		_, err := NewPullRequest(c.id, c.title, c.description)
-		if err != nil && c.expectedErr == "" {
-			t.Errorf("Expected err to be nil: %q", err)
-		}
-
-		if err == nil && c.expectedErr != "" {
-			t.Errorf("Expected err not to be nil")
-		}
-
-		if err != nil && c.expectedErr != "" {
-			if err.Error() != c.expectedErr {
-				t.Errorf("Expected err to be '%q' but received: %q", c.expectedErr, err.Error())
-			}
+		if c.expectedErr != "" {
+			require.EqualError(t, err, c.expectedErr)
+		} else {
+			require.NoError(t, err)
 		}
 	}
 }
@@ -128,4 +67,101 @@ func toStringPtr(s string) *string {
 
 func toIntPtr(i int) *int {
 	return &i
+}
+
+func TestPRStateValid(t *testing.T) {
+	json := `{"group":"g","app":"a","tag":"t","env":"e","sha":"s","feature":"","type":"promote"}`
+	description := fmt.Sprintf("<!-- metadata = %s -->\n\tENV: e\n\tAPP: a\n\tTAG: t", json)
+	state, ok, err := NewPRState(description)
+	require.NoError(t, err)
+	require.True(t, ok)
+	require.Equal(t, "g", state.Group)
+	require.Equal(t, "a", state.App)
+	require.Equal(t, "t", state.Tag)
+	require.Equal(t, "e", state.Env)
+	require.Equal(t, "s", state.Sha)
+	require.Equal(t, PRTypePromote, state.Type)
+	genDescription, err := state.Description()
+	require.NoError(t, err)
+	require.Equal(t, description, genDescription)
+}
+
+func TestPRStateInvalid(t *testing.T) {
+	description := "<!-- metadata = {{ asdasd } -->"
+	_, ok, err := NewPRState(description)
+	require.Error(t, err)
+	require.False(t, ok)
+}
+
+func TestPRStateNone(t *testing.T) {
+	description := "Some other data"
+	state, ok, err := NewPRState(description)
+	require.NoError(t, err)
+	require.False(t, ok)
+	require.Nil(t, state)
+}
+
+func TestPRStateBranchName(t *testing.T) {
+	cases := []struct {
+		name               string
+		state              PRState
+		includeEnv         bool
+		expectedBranchName string
+	}{
+		{
+			name: "promote no env",
+			state: PRState{
+				Group: "group",
+				App:   "app",
+				Tag:   "tag",
+				Env:   "dev",
+				Type:  PRTypePromote,
+			},
+			includeEnv:         false,
+			expectedBranchName: "promote/group-app",
+		},
+		{
+			name: "promote include env",
+			state: PRState{
+				Group: "group",
+				App:   "app",
+				Tag:   "tag",
+				Env:   "dev",
+				Type:  PRTypePromote,
+			},
+			includeEnv:         true,
+			expectedBranchName: "promote/dev/group-app",
+		},
+		{
+			name: "feature no env",
+			state: PRState{
+				Group:   "group",
+				App:     "app",
+				Tag:     "tag",
+				Env:     "dev",
+				Feature: "feature",
+				Type:    PRTypeFeature,
+			},
+			includeEnv:         false,
+			expectedBranchName: "feature/group-app-feature",
+		},
+		{
+			name: "feature include env",
+			state: PRState{
+				Group:   "group",
+				App:     "app",
+				Tag:     "tag",
+				Env:     "dev",
+				Feature: "feature",
+				Type:    PRTypeFeature,
+			},
+			includeEnv:         true,
+			expectedBranchName: "feature/dev/group-app-feature",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			require.Equal(t, c.expectedBranchName, c.state.BranchName(c.includeEnv))
+		})
+	}
 }

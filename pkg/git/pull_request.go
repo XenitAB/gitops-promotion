@@ -6,11 +6,18 @@ import (
 	"strings"
 )
 
+type PRType string
+
+const (
+	PRTypePromote PRType = "promote"
+	PRTypeFeature PRType = "feature"
+)
+
 type PullRequest struct {
 	ID          int
 	Title       string
 	Description string
-	State       PRState
+	State       *PRState
 }
 
 func NewPullRequest(id *int, title *string, description *string) (PullRequest, error) {
@@ -24,9 +31,9 @@ func NewPullRequest(id *int, title *string, description *string) (PullRequest, e
 	if description != nil {
 		d = *description
 	}
-	state, err := NewPRState(d)
+	state, _, err := NewPRState(d)
 	if err != nil {
-		return PullRequest{}, nil //nolint:nilerr // this looks fishy
+		return PullRequest{}, err
 	}
 	return PullRequest{
 		ID:          *id,
@@ -36,37 +43,38 @@ func NewPullRequest(id *int, title *string, description *string) (PullRequest, e
 	}, nil
 }
 
-type PRType string
-
-const (
-	PRTypePromote PRType = "promote"
-)
-
 type PRState struct {
-	Env   string `json:"env"`
-	Group string `json:"group"`
-	App   string `json:"app"`
-	Tag   string `json:"tag"`
-	Sha   string `json:"sha"`
-	Type  PRType `json:"type"`
+	Group   string `json:"group"`
+	App     string `json:"app"`
+	Tag     string `json:"tag"`
+	Env     string `json:"env"`
+	Sha     string `json:"sha"`
+	Feature string `json:"feature"`
+	Type    PRType `json:"type"`
 }
 
-func NewPRState(body string) (PRState, error) {
-	comp := strings.Split(body, " -->")
+// NewPRState takes the content of a pull rquest description and coverts
+// it to a PRState. No error will be returned if the description does not
+// contain state metadata, but the bool value will be false.
+func NewPRState(description string) (*PRState, bool, error) {
+	// Check if the body contains state data. If it does not it should return nil.
+	comp := strings.Split(description, " -->")
 	if len(comp) < 2 {
-		return PRState{}, fmt.Errorf("invalid metadata: %q", body)
+		return nil, false, nil
 	}
 	comp = strings.Split(comp[0], "<!-- metadata = ")
 	if len(comp) < 2 {
-		return PRState{}, fmt.Errorf("invalid metadata: %q", body)
+		return nil, false, nil
 	}
+
+	// Parse the state json data
 	out := comp[1]
-	prState := PRState{}
-	err := json.Unmarshal([]byte(out), &prState)
+	prState := &PRState{}
+	err := json.Unmarshal([]byte(out), prState)
 	if err != nil {
-		return PRState{}, err
+		return nil, false, err
 	}
-	return prState, nil
+	return prState, true, nil
 }
 
 func (p *PRState) GetPRType() PRType {
@@ -78,16 +86,24 @@ func (p *PRState) GetPRType() PRType {
 }
 
 func (p *PRState) BranchName(includeEnv bool) string {
+	comps := []string{string(p.GetPRType())}
 	if includeEnv {
-		return fmt.Sprintf("%s/%s/%s-%s", p.GetPRType(), p.Env, p.Group, p.App)
+		comps = append(comps, p.Env)
 	}
-	return fmt.Sprintf("%s/%s-%s", p.GetPRType(), p.Group, p.App)
+	name := fmt.Sprintf("%s-%s", p.Group, p.App)
+	if p.GetPRType() == PRTypeFeature {
+		name = fmt.Sprintf("%s-%s", name, p.Feature)
+	}
+	comps = append(comps, name)
+	return strings.Join(comps, "/")
 }
 
 func (p *PRState) Title() string {
 	switch p.GetPRType() {
 	case PRTypePromote:
 		return fmt.Sprintf("Promote %s/%s version %s to environment %s", p.Group, p.App, p.Tag, p.Env)
+	case PRTypeFeature:
+		return fmt.Sprintf("Review %s/%s feature %s in environment %s", p.Group, p.App, p.Tag, p.Env)
 	default:
 		return ""
 	}
