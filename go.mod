@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fluxcd/image-automation-controller v0.19.0
-	github.com/fluxcd/image-reflector-controller/api v0.15.0
+	github.com/fluxcd/image-reflector-controller/api v0.16.0
 	github.com/go-logr/logr v1.2.2
 	github.com/google/go-github/v40 v40.0.0
 	github.com/google/uuid v1.3.0
@@ -36,6 +36,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
+	github.com/fluxcd/pkg/apis/acl v0.0.3 // indirect
 	github.com/fluxcd/pkg/apis/meta v0.10.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect

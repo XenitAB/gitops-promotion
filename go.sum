@@ -344,8 +344,10 @@ github.com/felixge/httpsnoop v1.0.1/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSw
 github.com/fluxcd/image-automation-controller v0.19.0 h1:vOCmHuIdGI6L8OSYYQORFXSA4xxNGuI6yrW+TMSco8A=
 github.com/fluxcd/image-automation-controller v0.19.0/go.mod h1:boDezpOzwJsE4+236bINzeH7e/Le/wgkfPKiN9K6zdE=
 github.com/fluxcd/image-automation-controller/api v0.19.0/go.mod h1:e9hAvFZT5y1X6NaSNUHXkabpMkPA3Z1bDr3yea8gMzE=
-github.com/fluxcd/image-reflector-controller/api v0.15.0 h1:2XUKXLhWjbS7X8k1Ur/LJaIv2C8kbpErB46yw4Xmf4U=
 github.com/fluxcd/image-reflector-controller/api v0.15.0/go.mod h1:SPUqO4kodOglDFpZ+GhW/XBhKo71mWIqFRc+oT0jCfc=
+github.com/fluxcd/image-reflector-controller/api v0.16.0 h1:1O1YdoK7LsJgWLyvfZTSbvQcUQCBcgJ573HA0arlQQY=
+github.com/fluxcd/image-reflector-controller/api v0.16.0/go.mod h1:OIe3mSXc3OwQiNbiQ9vNXWYtNif31hc7WAbZWlFUUnc=
+github.com/fluxcd/pkg/apis/acl v0.0.3 h1:Lw0ZHdpnO4G7Zy9KjrzwwBmDZQuy4qEjaU/RvA6k1lc=
 github.com/fluxcd/pkg/apis/acl v0.0.3/go.mod h1:XPts6lRJ9C9fIF9xVWofmQwftvhY25n1ps7W9xw0XLU=
 github.com/fluxcd/pkg/apis/meta v0.10.2 h1:pnDBBEvfs4HaKiVAYgz+e/AQ8dLvcgmVfSeBroZ/KKI=
 github.com/fluxcd/pkg/apis/meta v0.10.2/go.mod h1:KQ2er9xa6koy7uoPMZjIjNudB5p4tXs+w0GO6fRcy7I=
