@@ -22,6 +22,12 @@ case $ACTION in
             --tag "$TAG" \
             --feature "$FEATURE"
         ;;
+    feature-stale)
+        /usr/local/bin/gitops-promotion feature-stale \
+            --provider github \
+            --sourcedir "$GITHUB_WORKSPACE" \
+            --token "$TOKEN" \
+        ;;
     promote)
         /usr/local/bin/gitops-promotion promote \
             --provider github \

@@ -59,11 +59,16 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 
 	// Push and create PR
 	branchName := state.BranchName(cfg.PRFlow == "per-env")
-	err = repo.CreateBranch(branchName, true)
+  title := state.Title()
+  description, err := state.Description()
+  if err != nil {
+    return "", err
+  }
+  err = repo.CreateBranch(branchName, true)
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
 	}
-	sha, err := repo.CreateCommit(branchName, state.Title())
+	sha, err := repo.CreateCommit(branchName, title)
 	if err != nil {
 		return "", fmt.Errorf("could not commit changes: %w", err)
 	}
@@ -75,7 +80,7 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 	if err != nil {
 		return "", fmt.Errorf("could not get environment automation state: %w", err)
 	}
-	prid, err := repo.CreatePR(ctx, branchName, auto, state)
+	prid, err := repo.CreatePR(ctx, branchName, auto, title, description)
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
 	}

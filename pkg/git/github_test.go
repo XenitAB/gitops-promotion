@@ -13,7 +13,7 @@ import (
 
 	"github.com/google/go-github/v40/github"
 	"github.com/google/uuid"
-	git2go "github.com/libgit2/git2go/v31"
+	git2go "github.com/libgit2/git2go/v33"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -146,7 +146,10 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	}
 
 	JustBeforeEach(func() {
-		prid, err = provider.CreatePR(ctx, branchName, auto, state)
+    title := state.Title()
+    description, err := state.Description()
+    Expect(err).To(BeNil())
+		prid, err = provider.CreatePR(ctx, branchName, auto, title, description)
 	})
 
 	When("Creating PR with empty values", func() {
@@ -211,7 +214,10 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			commitAFile(repo, branchName)
 			pushBranch(repo, branchName)
 
-			origPRId, e = provider.CreatePR(ctx, branchName, false, state)
+      title := state.Title()
+      description, err := state.Description()
+			Expect(err).To(BeNil())
+			origPRId, e = provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
 		})
 
@@ -412,7 +418,10 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			repo2 := cloneTestRepoOnExistingBranch(ctx, branchName)
 			state.Sha = commitAFile(repo2, branchName).String()
 			pushBranch(repo2, branchName)
-			_, e := provider.CreatePR(ctx, branchName, false, state)
+      title := state.Title()
+      description, err := state.Description()
+			Expect(err).To(BeNil())
+			_, e := provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
 
 			pr, e := provider.GetPRWithBranch(ctx, branchName, DefaultBranch)
@@ -475,7 +484,10 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 			state.Sha = commitAFile(repo2, branchName).String()
 			pushBranch(repo2, branchName)
 
-			origPRId, e = provider.CreatePR(ctx, branchName, false, state)
+      title := state.Title()
+      description, err := state.Description()
+			Expect(err).To(BeNil())
+			origPRId, e = provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
 		})
 
@@ -531,7 +543,10 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			commitSha := commitAFile(repo2, branchName)
 			pushBranch(repo2, branchName)
 
-			_, e := provider.CreatePR(ctx, branchName, false, state)
+      title := state.Title()
+      description, err := state.Description()
+			Expect(err).To(BeNil())
+			_, e := provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
 
 			mergedPR, e = provider.GetPRWithBranch(ctx, branchName, DefaultBranch)

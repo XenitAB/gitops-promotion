@@ -10,7 +10,7 @@ require (
 	github.com/google/go-github/v40 v40.0.0
 	github.com/google/uuid v1.3.0
 	github.com/jfrog/jfrog-client-go v1.7.1
-	github.com/libgit2/git2go/v31 v31.7.4
+	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
@@ -19,6 +19,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/whilp/git-urls v1.0.0
+	github.com/xeonx/timeago v1.0.0-rc4
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.23.1

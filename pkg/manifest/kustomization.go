@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	kustomizationFile = "kustomization.yaml"
 	featureLabel      = "gitops-promotion.xenit.io/feature"
 )
 
@@ -28,15 +27,12 @@ const (
 // It assumes that the fs is a base fs in the repository directory.
 // nolint:gocognit,gocritic // ignore
 func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[string]string) error {
-	envPath := filepath.Join(state.Group, state.Env)
-
 	// Write feature app manifests
-	resources, err := manfifestsMatchingSelector(fs, envPath, labelSelector)
+	resources, err := manfifestsMatchingSelector(fs, state.EnvPath(), labelSelector)
 	if err != nil {
 		return fmt.Errorf("could not get manifets from selector: %w", err)
 	}
-	appPath := filepath.Join(envPath, fmt.Sprintf("%s-%s", state.App, state.Feature))
-	dirExists, err := createOrReplaceDirectory(fs, appPath)
+	dirExists, err := createOrReplaceDirectory(fs, state.AppPath())
 	if err != nil {
 		return err
 	}
@@ -54,7 +50,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 		}
 		id := strings.Join([]string{res.GetGvk().String(), res.GetNamespace(), res.GetName()}, "-")
 		id = fmt.Sprintf("%s.yaml", id)
-		if err := afero.WriteFile(fs, filepath.Join(appPath, id), b, 0600); err != nil {
+		if err := afero.WriteFile(fs, filepath.Join(state.AppPath(), id), b, 0600); err != nil {
 			return err
 		}
 		kustomization.Resources = append(kustomization.Resources, id)
@@ -67,15 +63,14 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	if err != nil {
 		return err
 	}
-	if err := afero.WriteFile(fs, filepath.Join(appPath, kustomizationFile), b, 0600); err != nil {
+	if err := afero.WriteFile(fs, state.AppKustomizationPath(), b, 0600); err != nil {
 		return err
 	}
 
 	// Append feature kustomization to root resources if it does not exist
 	// TODO: Replace with a separate check instead
 	if !dirExists {
-		kustomizationPath := filepath.Join(envPath, kustomizationFile)
-		b, err = afero.ReadFile(fs, kustomizationPath)
+		b, err = afero.ReadFile(fs, state.EnvKustomizationPath())
 		if err != nil {
 			return err
 		}
@@ -83,6 +78,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 		if err != nil {
 			return err
 		}
+    // TODO: Replace with function from state
 		resourcePath := fmt.Sprintf("%s-%s", state.App, state.Feature)
 		rNode := node.Field("resources")
 		yNode := rNode.Value.YNode()
@@ -92,7 +88,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 		if err != nil {
 			return err
 		}
-		if err := afero.WriteFile(fs, kustomizationPath, []byte(data), 0600); err != nil {
+		if err := afero.WriteFile(fs, state.EnvKustomizationPath(), []byte(data), 0600); err != nil {
 			return err
 		}
 	}
@@ -100,20 +96,41 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	return nil
 }
 
-func createOrReplaceDirectory(fs afero.Fs, path string) (bool, error) {
-	dirExists, err := afero.DirExists(fs, path)
-	if err != nil {
-		return false, err
-	}
-	if dirExists {
-		if err := fs.RemoveAll(path); err != nil {
-			return false, err
-		}
-	}
-	if err := fs.Mkdir(path, 0755); err != nil {
-		return false, err
-	}
-	return dirExists, err
+func RemoveApplication(fs afero.Fs, state git.PRState) error {
+  // Remove application manifest directory
+  err := fs.RemoveAll(state.AppPath())
+  if err != nil {
+    return err
+  }
+
+  // Remove reference to path in environment Kustomization
+  b, err := afero.ReadFile(fs, state.EnvKustomizationPath())
+  if err != nil {
+    return err
+  }
+  node, err := kyaml.Parse(string(b))
+  if err != nil {
+    return err
+  }
+  rNode := node.Field("resources")
+  yNode := rNode.Value.YNode()
+  newContent := []*kyaml.Node{}
+  for _, content := range yNode.Content {
+    if content.Value == fmt.Sprintf("%s-%s", state.App, state.Feature)  {
+      continue
+    }
+    newContent = append(newContent, content)
+  }
+  yNode.Content = newContent
+  rNode.Value.SetYNode(yNode)
+  data, err := node.String()
+  if err != nil {
+    return err
+  }
+  if err := afero.WriteFile(fs, state.EnvKustomizationPath(), []byte(data), 0600); err != nil {
+    return err
+  }
+  return nil
 }
 
 func manfifestsMatchingSelector(fs afero.Fs, path string, labelSelector map[string]string) ([]*resource.Resource, error) {

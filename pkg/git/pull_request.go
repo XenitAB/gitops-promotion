@@ -3,7 +3,12 @@ package git
 import (
 	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
+)
+
+const (
+	kustomizationFileName = "kustomization.yaml"
 )
 
 type PRType string
@@ -119,4 +124,20 @@ func (p *PRState) Description() (string, error) {
 	APP: %s
 	TAG: %s`, string(jsonString), p.Env, p.App, p.Tag)
 	return description, nil
+}
+
+func (p *PRState) EnvPath() string {
+  return filepath.Join(p.Group, p.Env)
+}
+
+func (p *PRState) EnvKustomizationPath() string {
+  return  filepath.Join(p.EnvPath(), kustomizationFileName)
+}
+
+func (p *PRState) AppPath() string {
+	return filepath.Join(p.EnvPath(), fmt.Sprintf("%s-%s", p.App, p.Feature))
+}
+
+func (p *PRState) AppKustomizationPath() string {
+  return  filepath.Join(p.AppPath(), kustomizationFileName)
 }

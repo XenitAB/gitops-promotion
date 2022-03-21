@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	flag "github.com/spf13/pflag"
@@ -92,7 +93,9 @@ func Run(ctx context.Context, args []string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return FeatureCommand(ctx, cfg, repo, *group, *app, *tag, *feature)
+		return FeatureNewCommand(ctx, cfg, repo, *group, *app, *tag, *feature)
+  case "feature-stale":
+    return FeatureDeleteStaleCommand(ctx, cfg, repo, 7*24*time.Hour)
 	case "promote":
 		return PromoteCommand(ctx, cfg, repo)
 	case "status":
