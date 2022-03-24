@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/fluxcd/image-automation-controller v0.19.0
-	github.com/fluxcd/image-reflector-controller/api v0.15.0
+	github.com/fluxcd/image-reflector-controller/api v0.17.1
 	github.com/go-logr/logr v1.2.2
 	github.com/google/go-github/v40 v40.0.0
 	github.com/google/uuid v1.3.0
@@ -22,7 +22,7 @@ require (
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.23.1
-	k8s.io/apimachinery v0.23.1
+	k8s.io/apimachinery v0.23.4
 	sigs.k8s.io/kustomize/api v0.10.1
 	sigs.k8s.io/kustomize/kyaml v0.13.0
 	sigs.k8s.io/yaml v1.3.0
@@ -36,7 +36,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
-	github.com/fluxcd/pkg/apis/meta v0.10.2 // indirect
+	github.com/fluxcd/pkg/apis/acl v0.0.3 // indirect
+	github.com/fluxcd/pkg/apis/meta v0.12.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -90,9 +91,9 @@ require (
 	k8s.io/klog/v2 v2.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/utils v0.0.0-20211208161948-7d6a63dca704 // indirect
-	sigs.k8s.io/controller-runtime v0.11.0 // indirect
+	sigs.k8s.io/controller-runtime v0.11.1 // indirect
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
 
 // side-effect of depending on source-controller
