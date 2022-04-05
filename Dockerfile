@@ -8,7 +8,7 @@ COPY main.go main.go
 COPY pkg/ pkg/
 RUN CGO_ENABLED=1 go build -o gitops-promotion main.go
 
-FROM alpine:3.15.0
+FROM alpine:3.15.4
 LABEL org.opencontainers.image.source="https://github.com/XenitAB/gitops-promotion"
 # hadolint ignore=DL3017,DL3018
 RUN apk upgrade --no-cache && \
