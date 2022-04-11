@@ -110,6 +110,7 @@ func FeatureDeleteStaleCommand(ctx context.Context, cfg config.Config, repo *git
   }
 
   // Remove feature directories that have not been committed to for longer than max age
+  removedApplication := false
   for _, state := range states {
     commit, err := repo.GetLastCommitForPath(state.AppPath())
     if err != nil {
@@ -122,7 +123,12 @@ func FeatureDeleteStaleCommand(ctx context.Context, cfg config.Config, repo *git
     if err != nil {
       return "", fmt.Errorf("could not remove application: %w", err)
     }
+    removedApplication = true
+  } 
+  if !removedApplication {
+    return "No stale application to remove, exiting early.", nil
   }
+
 
   // Commit, push branch, create PR
   branchName := "remove/stale-feature"
@@ -140,11 +146,10 @@ func FeatureDeleteStaleCommand(ctx context.Context, cfg config.Config, repo *git
 	if err != nil {
 		return "", fmt.Errorf("could not push changes: %w", err)
 	}
-	/*auto, err := cfg.IsEnvironmentAutomated(environmentName)
+	auto, err := cfg.IsEnvironmentAutomated(environmentName)
 	if err != nil {
 		return "", fmt.Errorf("could not get environment automation state: %w", err)
-	}*/
-  auto := false
+	}
 	prid, err := repo.CreatePR(ctx, branchName, auto, title, description)
 	if err != nil {
 		return "", fmt.Errorf("could not create a PR: %w", err)
