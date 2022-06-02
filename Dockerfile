@@ -1,4 +1,4 @@
-FROM golang:1.17.6-alpine3.15 as builder
+FROM golang:1.18.3-alpine3.15 as builder
 RUN apk add --no-cache gcc=~10.3 pkgconfig=~1.7 musl-dev=~1.2 libgit2-dev=~1.3
 WORKDIR /workspace
 COPY go.mod go.mod
