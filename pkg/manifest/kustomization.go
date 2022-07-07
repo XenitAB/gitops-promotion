@@ -96,6 +96,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	return nil
 }
 
+// nolint:gocritic // ignore
 func RemoveApplication(fs afero.Fs, state git.PRState) error {
 	// Remove application manifest directory
 	err := fs.RemoveAll(state.AppPath())

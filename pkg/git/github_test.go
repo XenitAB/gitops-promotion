@@ -150,6 +150,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		description, err := state.Description()
 		Expect(err).To(BeNil())
 		prid, err = provider.CreatePR(ctx, branchName, auto, title, description)
+		Expect(err).To(BeNil())
 	})
 
 	When("Creating PR with empty values", func() {
