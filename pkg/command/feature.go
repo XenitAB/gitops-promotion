@@ -46,11 +46,11 @@ func FeatureNewCommand(ctx context.Context, cfg config.Config, repo *git.Reposit
 	}
 
 	branchName := state.BranchName(false)
-  title := state.Title()
-  description, err := state.Description()
-  if err != nil {
-    return "", err
-  }
+	title := state.Title()
+	description, err := state.Description()
+	if err != nil {
+		return "", err
+	}
 	err = repo.CreateBranch(branchName, true)
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
@@ -75,69 +75,68 @@ func FeatureNewCommand(ctx context.Context, cfg config.Config, repo *git.Reposit
 }
 
 func FeatureDeleteStaleCommand(ctx context.Context, cfg config.Config, repo *git.Repository, maxAge time.Duration) (string, error) {
-  environmentName := cfg.Environments[0].Name
-  fs := afero.NewBasePathFs(afero.NewOsFs(), repo.GetRootDir())
-  
-  // Find directory names that are feature deployments
-  states := []git.PRState{}
-  for groupKey, group := range cfg.Groups {
-    for appKey := range group.Applications {
-      globKey := fmt.Sprintf("%s-*", appKey)
-      matches, err := afero.Glob(fs, filepath.Join(groupKey, environmentName, globKey))
-      if err != nil {
-        return "", err
-      }
-      for _, match := range matches {
-        // Skip non directories
-        if fi, err  := fs.Stat(match); err != nil && !fi.IsDir() {
-          continue
-        }
+	environmentName := cfg.Environments[0].Name
+	fs := afero.NewBasePathFs(afero.NewOsFs(), repo.GetRootDir())
 
-        // TODO: Replace with strings.Cut in Go 1.18
-        comps := strings.Split(match, "-")
-        feature := strings.Join(comps[1:], "-")
+	// Find directory names that are feature deployments
+	states := []git.PRState{}
+	for groupKey, group := range cfg.Groups {
+		for appKey := range group.Applications {
+			globKey := fmt.Sprintf("%s-*", appKey)
+			matches, err := afero.Glob(fs, filepath.Join(groupKey, environmentName, globKey))
+			if err != nil {
+				return "", err
+			}
+			for _, match := range matches {
+				// Skip non directories
+				if fi, err := fs.Stat(match); err != nil && !fi.IsDir() {
+					continue
+				}
 
-        state := git.PRState{
-          Group: groupKey,
-          App: appKey,
-          Env: environmentName,
-          Feature: feature,
-          Type: git.PRTypeFeature,
-        }
-        states = append(states, state)
-      }
-    }
-  }
+				// TODO: Replace with strings.Cut in Go 1.18
+				comps := strings.Split(match, "-")
+				feature := strings.Join(comps[1:], "-")
 
-  // Remove feature directories that have not been committed to for longer than max age
-  removedApplication := false
-  for _, state := range states {
-    commit, err := repo.GetLastCommitForPath(state.AppPath())
-    if err != nil {
-      return "", err
-    }
-    if time.Now().Sub(commit.Author().When) < maxAge {
-      continue
-    }
-    err  = manifest.RemoveApplication(fs, state)
-    if err != nil {
-      return "", fmt.Errorf("could not remove application: %w", err)
-    }
-    removedApplication = true
-  } 
-  if !removedApplication {
-    return "No stale application to remove, exiting early.", nil
-  }
+				state := git.PRState{
+					Group:   groupKey,
+					App:     appKey,
+					Env:     environmentName,
+					Feature: feature,
+					Type:    git.PRTypeFeature,
+				}
+				states = append(states, state)
+			}
+		}
+	}
 
+	// Remove feature directories that have not been committed to for longer than max age
+	removedApplication := false
+	for _, state := range states {
+		commit, err := repo.GetLastCommitForPath(state.AppPath())
+		if err != nil {
+			return "", err
+		}
+		if time.Now().Sub(commit.Author().When) < maxAge {
+			continue
+		}
+		err = manifest.RemoveApplication(fs, state)
+		if err != nil {
+			return "", fmt.Errorf("could not remove application: %w", err)
+		}
+		removedApplication = true
+	}
+	if !removedApplication {
+		return "No stale application to remove, exiting early.", nil
+	}
 
-  // Commit, push branch, create PR
-  branchName := "remove/stale-feature"
-  err := repo.CreateBranch(branchName, true)
+	// Commit, push branch, create PR
+	branchName := "remove/stale-feature"
+	err := repo.CreateBranch(branchName, true)
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
 	}
-  title := "Remove stale review features"
-  description := ""
+	title := "Remove stale review features"
+	description := ""
 	sha, err := repo.CreateCommit(branchName, title)
 	if err != nil {
 		return "", fmt.Errorf("could not commit changes: %w", err)

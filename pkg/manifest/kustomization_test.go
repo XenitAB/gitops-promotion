@@ -22,16 +22,16 @@ func TestDuplicateAndRemoveApplication(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	fs := afero.NewCopyOnWriteFs(osFs, memFs)
 
-  state := git.PRState{
-    Group:   "apps",
-    App:     "nginx",
-    Env:     "dev",
-    Feature: "feature",
-  }
+	state := git.PRState{
+		Group:   "apps",
+		App:     "nginx",
+		Env:     "dev",
+		Feature: "feature",
+	}
 	for _, tag := range []string{"1234", "abcd", "12ab"} {
 		state.Tag = tag
 
-    err := DuplicateApplication(fs, state, map[string]string{"app": "nginx"})
+		err := DuplicateApplication(fs, state, map[string]string{"app": "nginx"})
 		require.NoError(t, err)
 
 		expectedRootKustomization := `resources:
@@ -61,11 +61,11 @@ resources:
 			files = append(files, fi.Name())
 		}
 		require.Equal(t, []string{"apps_v1_Deployment--nginx.yaml", "kustomization.yaml", "~G_v1_Service--nginx.yaml"}, files)
-  }
+	}
 
-  err := RemoveApplication(fs, state)
-  require.NoError(t, err)
-  expectedKustomization := `resources:
+	err := RemoveApplication(fs, state)
+	require.NoError(t, err)
+	expectedKustomization := `resources:
 - ../base
 - existing-feature
 images:
@@ -73,8 +73,8 @@ images:
   newTag: app # {"$imagepolicy": "apps:nginx:tag"}
 `
 	testFileContains(t, memFs, state.EnvKustomizationPath(), expectedKustomization)
-  _, err = fs.Stat(state.AppPath())
-  require.EqualError(t, err, "stat testdata/duplicate-application/apps/dev/nginx-feature: no such file or directory")
+	_, err = fs.Stat(state.AppPath())
+	require.EqualError(t, err, "stat testdata/duplicate-application/apps/dev/nginx-feature: no such file or directory")
 }
 
 func TestPatchIngress(t *testing.T) {

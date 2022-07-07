@@ -167,72 +167,72 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 
 // GetLastCommitForPath returns the last commit for the given path. All files and subdirectories
 // will be considered if the path is a directory.
-func (g *Repository) GetLastCommitForPath(path string) (*git2go. Commit, error) {
-  // There is currently no implementation in libgit2 to recursively check files.
-  // Here is an issue in git2go which discusses the problem of recursively checking files.
-  // https://github.com/libgit2/git2go/issues/729
-  // This implementation should probably be refactored in the future.
-  
-  // Get head commit
-  head, err := g.gitRepository.Head()
+func (g *Repository) GetLastCommitForPath(path string) (*git2go.Commit, error) {
+	// There is currently no implementation in libgit2 to recursively check files.
+	// Here is an issue in git2go which discusses the problem of recursively checking files.
+	// https://github.com/libgit2/git2go/issues/729
+	// This implementation should probably be refactored in the future.
+
+	// Get head commit
+	head, err := g.gitRepository.Head()
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
-  commit, err := g.gitRepository.LookupCommit(head.Target())
+	commit, err := g.gitRepository.LookupCommit(head.Target())
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
 
-  walk, err := g.gitRepository.Walk()
+	walk, err := g.gitRepository.Walk()
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
-  // Set commit to start at
-  err = walk.Push(commit.Id())
+	// Set commit to start at
+	err = walk.Push(commit.Id())
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
-  // Iterate through all commits
-  var lastCommit *git2go.Commit
-  err = walk.Iterate(func(commit *git2go.Commit) bool {
-    if commit.ParentCount() == 0  {
-      return true
-    }
-    parent := commit.Parent(0)
-    commitTree, err := commit.Tree()
-    if err != nil {
-      fmt.Println("commit tree", err)
-      return true
-    }
-    parentTree, err := parent.Tree()
-    if err != nil {
-      return true
-    }
-    cId, err := commitTree.EntryByPath(path)
-    if err != nil {
-      return true
-    }
-    pId, err := parentTree.EntryByPath(path)
-    if err != nil {
-      // Assume that the path only has a single commit 
-      // as there is no parent with the same path entry.
-      lastCommit = commit
-      return false
-    }
-		if cId.Id.String() != pId.Id.String() {
-      lastCommit = commit
-      return false
+	// Iterate through all commits
+	var lastCommit *git2go.Commit
+	err = walk.Iterate(func(commit *git2go.Commit) bool {
+		if commit.ParentCount() == 0 {
+			return true
 		}
-    return true
-  })
+		parent := commit.Parent(0)
+		commitTree, err := commit.Tree()
+		if err != nil {
+			fmt.Println("commit tree", err)
+			return true
+		}
+		parentTree, err := parent.Tree()
+		if err != nil {
+			return true
+		}
+		cId, err := commitTree.EntryByPath(path)
+		if err != nil {
+			return true
+		}
+		pId, err := parentTree.EntryByPath(path)
+		if err != nil {
+			// Assume that the path only has a single commit
+			// as there is no parent with the same path entry.
+			lastCommit = commit
+			return false
+		}
+		if cId.Id.String() != pId.Id.String() {
+			lastCommit = commit
+			return false
+		}
+		return true
+	})
 	if err != nil {
-    return nil, err
+		return nil, err
 	}
-  if lastCommit == nil {
-    return nil, fmt.Errorf("commit not found for path %s", path)
-  }
+	if lastCommit == nil {
+		return nil, fmt.Errorf("commit not found for path %s", path)
+	}
 
-  return lastCommit, nil
+	return lastCommit, nil
 }
 
 // Push pushes the given branch to the remote.

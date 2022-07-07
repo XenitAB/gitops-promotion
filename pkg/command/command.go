@@ -94,8 +94,8 @@ func Run(ctx context.Context, args []string) (string, error) {
 			return "", err
 		}
 		return FeatureNewCommand(ctx, cfg, repo, *group, *app, *tag, *feature)
-  case "feature-stale":
-    return FeatureDeleteStaleCommand(ctx, cfg, repo, 7*24*time.Hour)
+	case "feature-stale":
+		return FeatureDeleteStaleCommand(ctx, cfg, repo, 7*24*time.Hour)
 	case "promote":
 		return PromoteCommand(ctx, cfg, repo)
 	case "status":

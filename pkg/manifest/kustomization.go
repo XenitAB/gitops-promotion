@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	featureLabel      = "gitops-promotion.xenit.io/feature"
+	featureLabel = "gitops-promotion.xenit.io/feature"
 )
 
 // DuplicateApplication duplicates the application manifests based on the label selector.
@@ -78,7 +78,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 		if err != nil {
 			return err
 		}
-    // TODO: Replace with function from state
+		// TODO: Replace with function from state
 		resourcePath := fmt.Sprintf("%s-%s", state.App, state.Feature)
 		rNode := node.Field("resources")
 		yNode := rNode.Value.YNode()
@@ -97,40 +97,40 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 }
 
 func RemoveApplication(fs afero.Fs, state git.PRState) error {
-  // Remove application manifest directory
-  err := fs.RemoveAll(state.AppPath())
-  if err != nil {
-    return err
-  }
+	// Remove application manifest directory
+	err := fs.RemoveAll(state.AppPath())
+	if err != nil {
+		return err
+	}
 
-  // Remove reference to path in environment Kustomization
-  b, err := afero.ReadFile(fs, state.EnvKustomizationPath())
-  if err != nil {
-    return err
-  }
-  node, err := kyaml.Parse(string(b))
-  if err != nil {
-    return err
-  }
-  rNode := node.Field("resources")
-  yNode := rNode.Value.YNode()
-  newContent := []*kyaml.Node{}
-  for _, content := range yNode.Content {
-    if content.Value == fmt.Sprintf("%s-%s", state.App, state.Feature)  {
-      continue
-    }
-    newContent = append(newContent, content)
-  }
-  yNode.Content = newContent
-  rNode.Value.SetYNode(yNode)
-  data, err := node.String()
-  if err != nil {
-    return err
-  }
-  if err := afero.WriteFile(fs, state.EnvKustomizationPath(), []byte(data), 0600); err != nil {
-    return err
-  }
-  return nil
+	// Remove reference to path in environment Kustomization
+	b, err := afero.ReadFile(fs, state.EnvKustomizationPath())
+	if err != nil {
+		return err
+	}
+	node, err := kyaml.Parse(string(b))
+	if err != nil {
+		return err
+	}
+	rNode := node.Field("resources")
+	yNode := rNode.Value.YNode()
+	newContent := []*kyaml.Node{}
+	for _, content := range yNode.Content {
+		if content.Value == fmt.Sprintf("%s-%s", state.App, state.Feature) {
+			continue
+		}
+		newContent = append(newContent, content)
+	}
+	yNode.Content = newContent
+	rNode.Value.SetYNode(yNode)
+	data, err := node.String()
+	if err != nil {
+		return err
+	}
+	if err := afero.WriteFile(fs, state.EnvKustomizationPath(), []byte(data), 0600); err != nil {
+		return err
+	}
+	return nil
 }
 
 func manfifestsMatchingSelector(fs afero.Fs, path string, labelSelector map[string]string) ([]*resource.Resource, error) {

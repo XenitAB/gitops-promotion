@@ -59,12 +59,12 @@ func promote(ctx context.Context, cfg config.Config, repo *git.Repository, state
 
 	// Push and create PR
 	branchName := state.BranchName(cfg.PRFlow == "per-env")
-  title := state.Title()
-  description, err := state.Description()
-  if err != nil {
-    return "", err
-  }
-  err = repo.CreateBranch(branchName, true)
+	title := state.Title()
+	description, err := state.Description()
+	if err != nil {
+		return "", err
+	}
+	err = repo.CreateBranch(branchName, true)
 	if err != nil {
 		return "", fmt.Errorf("could not create branch: %w", err)
 	}

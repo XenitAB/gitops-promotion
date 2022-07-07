@@ -127,11 +127,11 @@ func (p *PRState) Description() (string, error) {
 }
 
 func (p *PRState) EnvPath() string {
-  return filepath.Join(p.Group, p.Env)
+	return filepath.Join(p.Group, p.Env)
 }
 
 func (p *PRState) EnvKustomizationPath() string {
-  return  filepath.Join(p.EnvPath(), kustomizationFileName)
+	return filepath.Join(p.EnvPath(), kustomizationFileName)
 }
 
 func (p *PRState) AppPath() string {
@@ -139,5 +139,5 @@ func (p *PRState) AppPath() string {
 }
 
 func (p *PRState) AppKustomizationPath() string {
-  return  filepath.Join(p.AppPath(), kustomizationFileName)
+	return filepath.Join(p.AppPath(), kustomizationFileName)
 }

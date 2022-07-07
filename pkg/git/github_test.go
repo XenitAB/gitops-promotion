@@ -146,9 +146,9 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 	}
 
 	JustBeforeEach(func() {
-    title := state.Title()
-    description, err := state.Description()
-    Expect(err).To(BeNil())
+		title := state.Title()
+		description, err := state.Description()
+		Expect(err).To(BeNil())
 		prid, err = provider.CreatePR(ctx, branchName, auto, title, description)
 	})
 
@@ -214,8 +214,8 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			commitAFile(repo, branchName)
 			pushBranch(repo, branchName)
 
-      title := state.Title()
-      description, err := state.Description()
+			title := state.Title()
+			description, err := state.Description()
 			Expect(err).To(BeNil())
 			origPRId, e = provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
@@ -418,8 +418,8 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			repo2 := cloneTestRepoOnExistingBranch(ctx, branchName)
 			state.Sha = commitAFile(repo2, branchName).String()
 			pushBranch(repo2, branchName)
-      title := state.Title()
-      description, err := state.Description()
+			title := state.Title()
+			description, err := state.Description()
 			Expect(err).To(BeNil())
 			_, e := provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
@@ -484,8 +484,8 @@ var _ = Describe("GitHubGITProvider GetPRWithBranch", func() {
 			state.Sha = commitAFile(repo2, branchName).String()
 			pushBranch(repo2, branchName)
 
-      title := state.Title()
-      description, err := state.Description()
+			title := state.Title()
+			description, err := state.Description()
 			Expect(err).To(BeNil())
 			origPRId, e = provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
@@ -543,8 +543,8 @@ var _ = Describe("GitHubGITProvider GetPRThatCausedCommit", func() {
 			commitSha := commitAFile(repo2, branchName)
 			pushBranch(repo2, branchName)
 
-      title := state.Title()
-      description, err := state.Description()
+			title := state.Title()
+			description, err := state.Description()
 			Expect(err).To(BeNil())
 			_, e := provider.CreatePR(ctx, branchName, false, title, description)
 			Expect(e).To(BeNil())
