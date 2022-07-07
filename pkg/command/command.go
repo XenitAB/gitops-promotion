@@ -95,9 +95,9 @@ func Run(ctx context.Context, args []string) (string, error) {
 		}
 		return FeatureNewCommand(ctx, cfg, repo, *group, *app, *tag, *feature)
 	case "feature-stale":
-    featureStaleCommand := flag.NewFlagSet(args[1], flag.ExitOnError)
+		featureStaleCommand := flag.NewFlagSet(args[1], flag.ExitOnError)
 		featureStaleCommand.ParseErrorsWhitelist = flag.ParseErrorsWhitelist{UnknownFlags: true}
-    maxAge := featureStaleCommand.Duration("max-age", 7*24*time.Hour, "Threshold for when the last commit to a feature application is considered stale.") 
+		maxAge := featureStaleCommand.Duration("max-age", 7*24*time.Hour, "Threshold for when the last commit to a feature application is considered stale.")
 		err := featureStaleCommand.Parse(args[2:])
 		if err != nil {
 			return "", err
