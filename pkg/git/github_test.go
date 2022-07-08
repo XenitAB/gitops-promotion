@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v40/github"
+	"github.com/google/go-github/v45/github"
 	"github.com/google/uuid"
 	git2go "github.com/libgit2/git2go/v33"
 	. "github.com/onsi/ginkgo"

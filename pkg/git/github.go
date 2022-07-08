@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/google/go-github/v40/github"
+	"github.com/google/go-github/v45/github"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
