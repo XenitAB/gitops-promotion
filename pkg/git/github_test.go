@@ -147,6 +147,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 
 	JustBeforeEach(func() {
 		title := state.Title()
+    fmt.Println("title:", title)
 		description, err := state.Description()
 		Expect(err).To(BeNil())
 		// nolint:ineffassign,staticcheck // ignore
