@@ -149,13 +149,14 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		title := state.Title()
 		description, err := state.Description()
 		Expect(err).To(BeNil())
+		// nolint:ineffassign,staticcheck // ignore
 		prid, err = provider.CreatePR(ctx, branchName, auto, title, description)
-		Expect(err).To(BeNil())
 	})
 
 	When("Creating PR with empty values", func() {
 		It("returns error", func() {
 			var gitHubError *github.ErrorResponse
+			fmt.Println("foobar", err)
 			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
 			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
