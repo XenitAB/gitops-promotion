@@ -105,7 +105,7 @@ Usage of feature:
         Access token (PAT) to git provider
 ```
 
-The `feature` command is used to create temporary deployments of applications. Instead of updating the existing application image tag a new copy of all of the applications manifests will be created instead.
+The `feature` command is used to create temporary deployments of applications. It can either overwrite an existing applications image tag, or it can create a new copy of all of the applications manifests. This behavior depends on if `featureOverwrite` is enabled or not. Either way a feature will never be promoted.
 
 ## The GitOps repository
 
@@ -183,6 +183,7 @@ groups:
   apps:
     applications:
       podinfo:
+        featureOverwrite: false
         featureLabelSelector:
           app: podinfo
 ```
