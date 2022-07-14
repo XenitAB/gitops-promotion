@@ -13,7 +13,7 @@ require (
 	github.com/libgit2/git2go/v33 v33.0.9
 	github.com/microsoft/azure-devops-go-api/azuredevops v1.0.0-b5
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.17.0
+	github.com/onsi/gomega v1.19.0
 	github.com/shurcooL/githubv4 v0.0.0-20220520033151-0b4e3294ff00
 	github.com/spf13/afero v1.6.0
 	github.com/spf13/pflag v1.0.5
