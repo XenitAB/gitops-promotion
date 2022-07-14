@@ -25,8 +25,7 @@ inputs:
     required: false
 runs:
   using: docker
-  #image: docker://ghcr.io/xenitab/gitops-promotion:v1.0.0-pre2
-  image: docker://phillebaba/gitops-promotion:branch-deploy
+  image: docker://ghcr.io/xenitab/gitops-promotion:v1.0.0
   entrypoint: /usr/local/bin/action-entrypoint.sh
   env:
     ACTION: ${{ inputs.action }}

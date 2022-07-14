@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/avast/retry-go"
-	git2go "github.com/libgit2/git2go/v31"
+	git2go "github.com/libgit2/git2go/v33"
 	"github.com/stretchr/testify/require"
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )

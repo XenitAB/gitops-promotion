@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/avast/retry-go"
-	"github.com/google/go-github/v40/github"
+	"github.com/google/go-github/v45/github"
 	"github.com/shurcooL/githubv4"
 	"golang.org/x/oauth2"
 )
@@ -62,14 +62,9 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 
 // CreatePR ...
 //nolint:gocognit //temporary
-func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
+func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, title, description string) (int, error) {
 	sourceName := branchName
 	targetName := DefaultBranch
-	title := state.Title()
-	description, err := state.Description()
-	if err != nil {
-		return 0, err
-	}
 
 	listOpts := &github.PullRequestListOptions{
 		State: "open",

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/jfrog/jfrog-client-go/utils/io/fileutils"
 	flag "github.com/spf13/pflag"
@@ -17,7 +18,7 @@ const (
 	configFileName = "gitops-promotion.yaml"
 )
 
-// nolint:funlen,cyclop // ignore
+// nolint:funlen,cyclop,gocognit // ignore
 func Run(ctx context.Context, args []string) (string, error) {
 	if len(args) < 2 {
 		return "", fmt.Errorf("new, feature, promote, or status subcommand is required")
@@ -92,7 +93,17 @@ func Run(ctx context.Context, args []string) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		return FeatureCommand(ctx, cfg, repo, *group, *app, *tag, *feature)
+		return FeatureNewCommand(ctx, cfg, repo, *group, *app, *tag, *feature)
+	case "feature-stale":
+		featureStaleCommand := flag.NewFlagSet(args[1], flag.ExitOnError)
+		featureStaleCommand.ParseErrorsWhitelist = flag.ParseErrorsWhitelist{UnknownFlags: true}
+		maxAge := featureStaleCommand.Duration("max-age", 7*24*time.Hour,
+			"Threshold for when the last commit to a feature application is considered stale.")
+		err := featureStaleCommand.Parse(args[2:])
+		if err != nil {
+			return "", err
+		}
+		return FeatureDeleteStaleCommand(ctx, cfg, repo, *maxAge)
 	case "promote":
 		return PromoteCommand(ctx, cfg, repo)
 	case "status":

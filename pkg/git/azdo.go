@@ -68,15 +68,9 @@ func NewAzdoGITProvider(ctx context.Context, remoteURL, token string) (*AzdoGITP
 }
 
 // CreatePR ...
-//nolint:funlen // temporary
-func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
+func (g *AzdoGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, title, description string) (int, error) {
 	sourceRefName := fmt.Sprintf("refs/heads/%s", branchName)
 	targetRefName := fmt.Sprintf("refs/heads/%s", DefaultBranch)
-	title := state.Title()
-	description, err := state.Description()
-	if err != nil {
-		return 0, err
-	}
 
 	// Update PR if it already exists
 	getArgs := git.GetPullRequestsArgs{

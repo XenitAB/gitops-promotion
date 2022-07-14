@@ -20,7 +20,7 @@ func TestNewGitProvider(t *testing.T) {
 			providerType: ProviderTypeAzdo,
 			remoteURL:    "https://dev.azure.com/organization/project/_git/repository",
 			token:        "fake",
-			expectedErr:  "TF400813: The user '' is not authorized to access this resource.",
+			expectedErr:  "TF400813: The user 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' is not authorized to access this resource.",
 		},
 		{
 			name:         "fake provider returns error",

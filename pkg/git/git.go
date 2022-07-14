@@ -7,8 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	git "github.com/libgit2/git2go/v31"
-	git2go "github.com/libgit2/git2go/v31"
+	git2go "github.com/libgit2/git2go/v33"
 )
 
 const (
@@ -50,7 +49,7 @@ func LoadRepository(ctx context.Context, path string, providerTypeString string,
 }
 
 // FetchDefaultBranch updates DefaultBranch with new commits from DefaultRemote.
-func (g *Repository) FetchBranch(branchName string) (*git.Oid, error) {
+func (g *Repository) FetchBranch(branchName string) (*git2go.Oid, error) {
 	remote, err := g.gitRepository.Remotes.Lookup(DefaultRemote)
 	if err != nil {
 		return nil, fmt.Errorf("could not find remote %q: %w", DefaultRemote, err)
@@ -166,6 +165,77 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 	return sha, nil
 }
 
+// GetLastCommitForPath returns the last commit for the given path. All files and subdirectories
+// will be considered if the path is a directory.
+// nolint:gocognit // ignore
+func (g *Repository) GetLastCommitForPath(path string) (*git2go.Commit, error) {
+	// There is currently no implementation in libgit2 to recursively check files.
+	// Here is an issue in git2go which discusses the problem of recursively checking files.
+	// https://github.com/libgit2/git2go/issues/729
+	// This implementation should probably be refactored in the future.
+
+	// Get head commit
+	head, err := g.gitRepository.Head()
+	if err != nil {
+		return nil, err
+	}
+	commit, err := g.gitRepository.LookupCommit(head.Target())
+	if err != nil {
+		return nil, err
+	}
+
+	walk, err := g.gitRepository.Walk()
+	if err != nil {
+		return nil, err
+	}
+	// Set commit to start at
+	err = walk.Push(commit.Id())
+	if err != nil {
+		return nil, err
+	}
+	// Iterate through all commits
+	var lastCommit *git2go.Commit
+	err = walk.Iterate(func(commit *git2go.Commit) bool {
+		if commit.ParentCount() == 0 {
+			return true
+		}
+		parent := commit.Parent(0)
+		commitTree, err := commit.Tree()
+		if err != nil {
+			fmt.Println("commit tree", err)
+			return true
+		}
+		parentTree, err := parent.Tree()
+		if err != nil {
+			return true
+		}
+		cId, err := commitTree.EntryByPath(path)
+		if err != nil {
+			return true
+		}
+		pId, err := parentTree.EntryByPath(path)
+		if err != nil {
+			// Assume that the path only has a single commit
+			// as there is no parent with the same path entry.
+			lastCommit = commit
+			return false
+		}
+		if cId.Id.String() != pId.Id.String() {
+			lastCommit = commit
+			return false
+		}
+		return true
+	})
+	if err != nil {
+		return nil, err
+	}
+	if lastCommit == nil {
+		return nil, fmt.Errorf("commit not found for path %s", path)
+	}
+
+	return lastCommit, nil
+}
+
 // Push pushes the given branch to the remote.
 func (g *Repository) Push(branchName string, force bool) error {
 	remote, err := g.gitRepository.Remotes.Lookup(DefaultRemote)
@@ -188,8 +258,8 @@ func (g *Repository) Push(branchName string, force bool) error {
 }
 
 // CreatePR creates a PR for the branch. It assumes that the branch has been pushed.
-func (g *Repository) CreatePR(ctx context.Context, branchName string, auto bool, state *PRState) (int, error) {
-	return g.gitProvider.CreatePR(ctx, branchName, auto, state)
+func (g *Repository) CreatePR(ctx context.Context, branchName string, auto bool, title, description string) (int, error) {
+	return g.gitProvider.CreatePR(ctx, branchName, auto, title, description)
 }
 
 // GetStatus returns the status for the give commit.
@@ -243,7 +313,7 @@ func (g *Repository) GetPRThatCausedCurrentCommit(ctx context.Context) (PullRequ
 
 func Clone(url, username, password, path, branchName string) error {
 	_, err := git2go.Clone(url, path, &git2go.CloneOptions{
-		FetchOptions: &git2go.FetchOptions{
+		FetchOptions: git2go.FetchOptions{
 			DownloadTags:    git2go.DownloadTagsNone,
 			RemoteCallbacks: credentialsCallback(username, password),
 		},
