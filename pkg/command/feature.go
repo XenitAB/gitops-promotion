@@ -15,7 +15,7 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/manifest"
 )
 
-// FeatureCommand is similar to NewCommand but creates a PR with a temporary deployment of the application.
+// FeatureNewCommand is similar to NewCommand but creates a PR with a temporary deployment of the application.
 // A totally new application will be created instead of overriding the existing application deployment.
 func FeatureNewCommand(ctx context.Context, cfg config.Config, repo *git.Repository, group, app, tag, feature string) (string, error) {
 	// The feature name has to be alpha numeric or "-" as both Kubernetes
