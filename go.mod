@@ -15,7 +15,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
 	github.com/shurcooL/githubv4 v0.0.0-20220520033151-0b4e3294ff00
-	github.com/spf13/afero v1.6.0
+	github.com/spf13/afero v1.9.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.0
 	github.com/whilp/git-urls v1.0.0
