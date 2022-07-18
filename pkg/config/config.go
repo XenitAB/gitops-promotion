@@ -16,6 +16,7 @@ const (
 )
 
 type App struct {
+	FeatureOverwrite     bool              `yaml:"featureOverwrite"`
 	FeatureLabelSelector map[string]string `yaml:"featureLabelSelector"`
 }
 
@@ -104,6 +105,18 @@ func (c Config) IsAnyEnvironmentManual() bool {
 		}
 	}
 	return false
+}
+
+func (c Config) HasFeatureOverwrite(group, app string) (bool, error) {
+	groupObj, ok := c.Groups[group]
+	if !ok {
+		return false, fmt.Errorf("configuration does not contain group %s", group)
+	}
+	appObj, ok := groupObj.Applications[app]
+	if !ok {
+		return false, fmt.Errorf("configuration for group %s does not contain application %s", group, app)
+	}
+	return appObj.FeatureOverwrite, nil
 }
 
 func (c Config) GetFeatureLabelSelector(group, app string) (map[string]string, error) {

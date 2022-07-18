@@ -25,7 +25,6 @@ func FeatureNewCommand(ctx context.Context, cfg config.Config, repo *git.Reposit
 	reg := regexp.MustCompile("[^a-zA-Z0-9-]+")
 	feature = reg.ReplaceAllString(feature, "")
 	feature = strings.ToLower(feature)
-
 	state := git.PRState{
 		Env:     cfg.Environments[0].Name,
 		Group:   group,
@@ -35,6 +34,17 @@ func FeatureNewCommand(ctx context.Context, cfg config.Config, repo *git.Reposit
 		Feature: feature,
 		Type:    git.PRTypeFeature,
 	}
+
+	// If feature overwrite is enabled the application image with be changed like a normal deployment
+	// but it will not be promoted.
+	featureOverwrite, err := cfg.HasFeatureOverwrite(state.Group, app)
+	if err != nil {
+		return "", err
+	}
+	if featureOverwrite {
+		return promote(ctx, cfg, repo, &state)
+	}
+
 	featureLabelSelector, err := cfg.GetFeatureLabelSelector(state.Group, app)
 	if err != nil {
 		return "", fmt.Errorf("feature deployment does not work without configuring a feature label selector: %w", err)
@@ -44,7 +54,6 @@ func FeatureNewCommand(ctx context.Context, cfg config.Config, repo *git.Reposit
 	if err != nil {
 		return "", err
 	}
-
 	branchName := state.BranchName(false)
 	title := state.Title()
 	description, err := state.Description()
