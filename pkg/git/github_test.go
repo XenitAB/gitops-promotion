@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +28,7 @@ func randomBranchName(prefix string) string {
 
 func cloneTestRepoOnExistingBranch(ctx context.Context, branchName string) *Repository {
 	providerTypeString := string(ProviderTypeGitHub)
-	tmpDir, e := ioutil.TempDir("", "gitops-promotion")
+	tmpDir, e := os.MkdirTemp("", "gitops-promotion")
 	createdRepos = append(createdRepos, tmpDir)
 	Expect(e).To(BeNil())
 	e = Clone(remoteURL, "pat", token, tmpDir, branchName)
@@ -150,7 +150,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		fmt.Println("title:", title)
 		description, err := state.Description()
 		Expect(err).To(BeNil())
-		// nolint:ineffassign,staticcheck // ignore
+		//nolint:ineffassign,staticcheck // ignore
 		prid, err = provider.CreatePR(ctx, branchName, auto, title, description)
 	})
 
@@ -160,7 +160,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			fmt.Println("foobar", err)
 			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
-			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
+			body, bodyErr := io.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
 			bodyErr = gitHubError.Response.Body.Close()
 			Expect(bodyErr).To(BeNil())
@@ -178,7 +178,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 			var gitHubError *github.ErrorResponse
 			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
-			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
+			body, bodyErr := io.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
 			bodyErr = gitHubError.Response.Body.Close()
 			Expect(bodyErr).To(BeNil())
@@ -315,7 +315,7 @@ var _ = Describe("GitHubGITProvider GetStatus", func() {
 			var gitHubError *github.ErrorResponse
 			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
-			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
+			body, bodyErr := io.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
 			bodyErr = gitHubError.Response.Body.Close()
 			Expect(bodyErr).To(BeNil())
@@ -404,7 +404,7 @@ var _ = Describe("GitHubGITProvider MergePR", func() {
 			var gitHubError *github.ErrorResponse
 			ok := errors.As(err, &gitHubError)
 			Expect(ok).To(Equal(true))
-			body, bodyErr := ioutil.ReadAll(gitHubError.Response.Body)
+			body, bodyErr := io.ReadAll(gitHubError.Response.Body)
 			Expect(bodyErr).To(BeNil())
 			bodyErr = gitHubError.Response.Body.Close()
 			Expect(bodyErr).To(BeNil())
