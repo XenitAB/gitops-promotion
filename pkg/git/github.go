@@ -3,7 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -61,6 +61,7 @@ func NewGitHubGITProvider(ctx context.Context, remoteURL, token string) (*GitHub
 }
 
 // CreatePR ...
+//
 //nolint:gocognit //temporary
 func (g *GitHubGITProvider) CreatePR(ctx context.Context, branchName string, auto bool, title, description string) (int, error) {
 	sourceName := branchName
@@ -219,7 +220,7 @@ func (g *GitHubGITProvider) MergePR(ctx context.Context, id int, sha string) err
 	mergeSucceeded := *result.Merged
 
 	if !mergeSucceeded {
-		body, err := ioutil.ReadAll(res.Response.Body)
+		body, err := io.ReadAll(res.Response.Body)
 		if err != nil {
 			return err
 		}
@@ -272,7 +273,7 @@ func (g *GitHubGITProvider) GetPRWithBranch(ctx context.Context, source, target 
 	return NewPullRequest(pr.Number, pr.Title, pr.Body)
 }
 
-// nolint:gocognit // ignore
+//nolint:gocognit // ignore
 func (g *GitHubGITProvider) GetPRThatCausedCommit(ctx context.Context, sha string) (PullRequest, error) {
 	listOpts := &github.PullRequestListOptions{
 		State: "closed",

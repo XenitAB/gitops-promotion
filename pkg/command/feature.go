@@ -83,7 +83,7 @@ func FeatureNewCommand(ctx context.Context, cfg config.Config, repo *git.Reposit
 	return fmt.Sprintf("created branch %s with pull request %d on commit %s", branchName, prid, sha), nil
 }
 
-// nolint:gocognit,cyclop // ignore
+//nolint:gocognit,cyclop // ignore
 func FeatureDeleteStaleCommand(ctx context.Context, cfg config.Config, repo *git.Repository, maxAge time.Duration) (string, error) {
 	environmentName := cfg.Environments[0].Name
 	fs := afero.NewBasePathFs(afero.NewOsFs(), repo.GetRootDir())
@@ -121,7 +121,7 @@ func FeatureDeleteStaleCommand(ctx context.Context, cfg config.Config, repo *git
 
 	// Remove feature directories that have not been committed to for longer than max age
 	removedApplication := false
-	// nolint:gocritic // ignore
+	//nolint:gocritic // ignore
 	for _, state := range states {
 		commit, err := repo.GetLastCommitForPath(state.AppPath())
 		if err != nil {
