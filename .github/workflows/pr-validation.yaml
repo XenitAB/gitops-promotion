@@ -16,7 +16,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.17"
+          go-version: "1.19"
       - name: Install libgit2
         run: |
           cd /tmp
@@ -29,6 +29,8 @@ jobs:
           sudo ldconfig
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.48.0
 
   fmt:
     runs-on: ubuntu-latest
@@ -38,7 +40,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.17"
+          go-version: "1.19"
       - name: Run fmt
         run: |
           make fmt
@@ -69,7 +71,7 @@ jobs:
   #    - name: Setup go
   #      uses: actions/setup-go@v3
   #      with:
-  #        go-version: "1.17"
+  #        go-version: "1.19"
   #    - name: Install libgit2
   #      run: |
   #        cd /tmp
@@ -128,7 +130,7 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.17"
+          go-version: "1.19"
       - name: Install libgit2
         run: |
           cd /tmp
