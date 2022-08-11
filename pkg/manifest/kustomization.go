@@ -208,7 +208,7 @@ func patchDeployment(b []byte, tag string) ([]byte, error) {
 	// TODO: Do not override every single image tag
 	// nolint:gocritic // ignore
 	for i, container := range deployment.Spec.Template.Spec.Containers {
-		name, _ := image.Split(container.Image)
+		name, _, _ := image.Split(container.Image)
 		deployment.Spec.Template.Spec.Containers[i].Image = fmt.Sprintf("%s:%s", name, tag)
 	}
 	return yaml.Marshal(deployment)
