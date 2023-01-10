@@ -25,7 +25,7 @@ const (
 
 // DuplicateApplication duplicates the application manifests based on the label selector.
 // It assumes that the fs is a base fs in the repository directory.
-// nolint:gocognit,gocritic // ignore
+//nolint:gocognit,gocritic // ignore
 func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[string]string) error {
 	// Write feature app manifests
 	resources, err := manfifestsMatchingSelector(fs, state.EnvPath(), labelSelector)
@@ -96,7 +96,7 @@ func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[stri
 	return nil
 }
 
-// nolint:gocritic // ignore
+//nolint:gocritic // ignore
 func RemoveApplication(fs afero.Fs, state git.PRState) error {
 	// Remove application manifest directory
 	err := fs.RemoveAll(state.AppPath())
@@ -190,7 +190,7 @@ func patchIngress(b []byte, feature string) ([]byte, error) {
 	for i, rule := range ingress.Spec.Rules {
 		ingress.Spec.Rules[i].Host = fmt.Sprintf("%s.%s", feature, rule.Host)
 	}
-	// nolint:gocritic // ignore
+	//nolint:gocritic // ignore
 	for i, tls := range ingress.Spec.TLS {
 		for j, host := range tls.Hosts {
 			ingress.Spec.TLS[i].Hosts[j] = fmt.Sprintf("%s.%s", feature, host)
@@ -206,7 +206,7 @@ func patchDeployment(b []byte, tag string) ([]byte, error) {
 		return nil, err
 	}
 	// TODO: Do not override every single image tag
-	// nolint:gocritic // ignore
+	//nolint:gocritic // ignore
 	for i, container := range deployment.Spec.Template.Spec.Containers {
 		name, _ := image.Split(container.Image)
 		deployment.Spec.Template.Spec.Containers[i].Image = fmt.Sprintf("%s:%s", name, tag)
