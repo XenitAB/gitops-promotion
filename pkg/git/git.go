@@ -167,6 +167,7 @@ func (g *Repository) CreateCommit(branchName, message string) (*git2go.Oid, erro
 
 // GetLastCommitForPath returns the last commit for the given path. All files and subdirectories
 // will be considered if the path is a directory.
+//
 //nolint:gocognit // ignore
 func (g *Repository) GetLastCommitForPath(path string) (*git2go.Commit, error) {
 	// There is currently no implementation in libgit2 to recursively check files.

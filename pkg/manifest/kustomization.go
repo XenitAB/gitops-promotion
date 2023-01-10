@@ -25,6 +25,7 @@ const (
 
 // DuplicateApplication duplicates the application manifests based on the label selector.
 // It assumes that the fs is a base fs in the repository directory.
+//
 //nolint:gocognit,gocritic // ignore
 func DuplicateApplication(fs afero.Fs, state git.PRState, labelSelector map[string]string) error {
 	// Write feature app manifests
