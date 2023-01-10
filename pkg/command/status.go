@@ -10,8 +10,9 @@ import (
 	"github.com/xenitab/gitops-promotion/pkg/git"
 )
 
-//nolint:gocognit // not convinced that extracting bits would make it more readable
 // StatusCommand is run inside a PR to check if the PR can be merged.
+//
+//nolint:gocognit // not convinced that extracting bits would make it more readable
 func StatusCommand(ctx context.Context, cfg config.Config, repo *git.Repository) (string, error) {
 	// If branch does not contain promote it was manual, return early
 	branchName, err := repo.GetBranchName()
