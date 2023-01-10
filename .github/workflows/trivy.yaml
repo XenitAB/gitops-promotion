@@ -2,11 +2,11 @@ name: Trivy
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [main]
   push:
-    branches: [ main ]
+    branches: [main]
   schedule:
-    - cron: '0 4 * * *'
+    - cron: "0 4 * * *"
 
 env:
   NAME: "gitops-promotion"
@@ -24,8 +24,8 @@ jobs:
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF/refs\/tags\//}
           fi
-          echo ::set-output name=BUILD_DATE::$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-          echo ::set-output name=VERSION::${VERSION}
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
       - uses: brpaz/hadolint-action@v1.5.0
         with:
           dockerfile: Dockerfile
@@ -61,10 +61,10 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.NAME }}:${{ steps.prep.outputs.VERSION }}
-          format: 'template'
-          template: '@/contrib/sarif.tpl'
-          output: 'trivy-results.sarif'
+          format: "template"
+          template: "@/contrib/sarif.tpl"
+          output: "trivy-results.sarif"
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v1
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: "trivy-results.sarif"
