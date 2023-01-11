@@ -47,7 +47,7 @@ var providers = []providerConfig{
 	},
 }
 
-// nolint:gocritic // Using reference will trigger warning that p is a loop variable below
+//nolint:gocritic // Using reference will trigger warning that p is a loop variable below
 func testSetup(ctx context.Context, config providerConfig) error {
 	if config.providerType == "github" {
 		client := makeGitHubClient(ctx, &config)
@@ -76,7 +76,7 @@ func testSetup(ctx context.Context, config providerConfig) error {
 	}
 }
 
-// nolint:gocritic // Using reference will trigger warning that p is a loop variable below
+//nolint:gocritic // Using reference will trigger warning that p is a loop variable below
 func testTeardown(ctx context.Context, config providerConfig) error {
 	if config.providerType == "github" {
 		client := makeGitHubClient(ctx, &config)

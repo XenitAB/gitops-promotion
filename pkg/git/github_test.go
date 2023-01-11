@@ -150,7 +150,7 @@ var _ = Describe("GitHubGITProvider CreatePR", func() {
 		fmt.Println("title:", title)
 		description, err := state.Description()
 		Expect(err).To(BeNil())
-		// nolint:ineffassign,staticcheck // ignore
+		//nolint:ineffassign,staticcheck // ignore
 		prid, err = provider.CreatePR(ctx, branchName, auto, title, description)
 	})
 
