@@ -156,7 +156,7 @@ func (g *GitHubGITProvider) GetStatus(ctx context.Context, sha string, group str
 	name := fmt.Sprintf("%s-%s", group, env)
 	for _, s := range statuses {
 		comp := strings.Split(*s.Context, "/")
-		if len(comp) != 2 {
+		if len(comp) < 2 {
 			return CommitStatus{}, fmt.Errorf("status context in wrong format: %q", *s.Context)
 		}
 		if comp[1] == name {

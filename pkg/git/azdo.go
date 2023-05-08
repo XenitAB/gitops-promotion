@@ -171,7 +171,7 @@ func (g *AzdoGITProvider) GetStatus(ctx context.Context, sha string, group strin
 	for i := range *statuses {
 		s := (*statuses)[i]
 		comp := strings.Split(*s.Context.Name, "/")
-		if len(comp) != 2 {
+		if len(comp) < 2 {
 			return CommitStatus{}, fmt.Errorf("status name in wrong format: %q", *s.Context.Name)
 		}
 		if *s.Context.Genre == genre && comp[1] == name {
