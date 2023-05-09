@@ -25,7 +25,7 @@ inputs:
     required: false
 runs:
   using: docker
-  image: docker://ghcr.io/xenitab/gitops-promotion:v1.2.1
+  image: docker://ghcr.io/xenitab/gitops-promotion:v1.3.1
   entrypoint: /usr/local/bin/action-entrypoint.sh
   env:
     ACTION: ${{ inputs.action }}
