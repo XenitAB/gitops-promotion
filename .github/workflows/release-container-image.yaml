@@ -28,7 +28,7 @@ jobs:
         run: |
           echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
       - name: Cache container layers
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3.3.2
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
