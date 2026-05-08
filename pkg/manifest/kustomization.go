@@ -172,6 +172,11 @@ func patchResource(res *resource.Resource, tag, feature string) ([]byte, error) 
 		if err != nil {
 			return nil, err
 		}
+	case "HTTPRoute":
+		b, err = patchHTTPRoute(b, feature)
+		if err != nil {
+			return nil, err
+		}
 	case "Deployment":
 		b, err = patchDeployment(b, tag)
 		if err != nil {
@@ -198,6 +203,38 @@ func patchIngress(b []byte, feature string) ([]byte, error) {
 		}
 	}
 	return yaml.Marshal(ingress)
+}
+
+// patchHTTPRoute prefixes every hostname in a Gateway API HTTPRoute with the
+// feature name. The HTTPRoute manifest is manipulated as a generic YAML node
+// to avoid taking a hard dependency on the gateway-api Go module.
+func patchHTTPRoute(b []byte, feature string) ([]byte, error) {
+	node, err := kyaml.Parse(string(b))
+	if err != nil {
+		return nil, err
+	}
+	specNode, err := node.Pipe(kyaml.Lookup("spec", "hostnames"))
+	if err != nil {
+		return nil, err
+	}
+	if specNode == nil {
+		return b, nil
+	}
+	yNode := specNode.YNode()
+	if yNode.Kind != kyaml.SequenceNode {
+		return b, nil
+	}
+	for _, item := range yNode.Content {
+		if item.Kind != kyaml.ScalarNode {
+			continue
+		}
+		item.Value = fmt.Sprintf("%s.%s", feature, item.Value)
+	}
+	data, err := node.String()
+	if err != nil {
+		return nil, err
+	}
+	return []byte(data), nil
 }
 
 func patchDeployment(b []byte, tag string) ([]byte, error) {
