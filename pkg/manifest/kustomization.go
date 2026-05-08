@@ -206,35 +206,35 @@ func patchIngress(b []byte, feature string) ([]byte, error) {
 }
 
 // patchHTTPRoute prefixes every hostname in a Gateway API HTTPRoute with the
-// feature name. The HTTPRoute manifest is manipulated as a generic YAML node
-// to avoid taking a hard dependency on the gateway-api Go module.
+// feature name. The HTTPRoute manifest is manipulated as a generic map to
+// avoid taking a hard dependency on the gateway-api Go module.
 func patchHTTPRoute(b []byte, feature string) ([]byte, error) {
-	node, err := kyaml.Parse(string(b))
-	if err != nil {
+	obj := map[string]interface{}{}
+	if err := yaml.Unmarshal(b, &obj); err != nil {
 		return nil, err
 	}
-	specNode, err := node.Pipe(kyaml.Lookup("spec", "hostnames"))
-	if err != nil {
-		return nil, err
-	}
-	if specNode == nil {
+	spec, ok := obj["spec"].(map[string]interface{})
+	if !ok {
 		return b, nil
 	}
-	yNode := specNode.YNode()
-	if yNode.Kind != kyaml.SequenceNode {
+	rawHostnames, ok := spec["hostnames"]
+	if !ok {
 		return b, nil
 	}
-	for _, item := range yNode.Content {
-		if item.Kind != kyaml.ScalarNode {
+	hostnames, ok := rawHostnames.([]interface{})
+	if !ok {
+		return b, nil
+	}
+	for i, h := range hostnames {
+		host, ok := h.(string)
+		if !ok {
 			continue
 		}
-		item.Value = fmt.Sprintf("%s.%s", feature, item.Value)
+		hostnames[i] = fmt.Sprintf("%s.%s", feature, host)
 	}
-	data, err := node.String()
-	if err != nil {
-		return nil, err
-	}
-	return []byte(data), nil
+	spec["hostnames"] = hostnames
+	obj["spec"] = spec
+	return yaml.Marshal(obj)
 }
 
 func patchDeployment(b []byte, tag string) ([]byte, error) {

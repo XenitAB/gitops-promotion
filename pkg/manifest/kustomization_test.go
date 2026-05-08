@@ -142,11 +142,11 @@ kind: HTTPRoute
 metadata:
   name: test
 spec:
-  parentRefs:
-  - name: gateway
   hostnames:
   - baz.foo.bar.example
   - baz.other.foo.bar.example
+  parentRefs:
+  - name: gateway
   rules:
   - backendRefs:
     - name: service
