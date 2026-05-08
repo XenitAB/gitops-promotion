@@ -121,6 +121,60 @@ status:
 	}
 }
 
+func TestPatchHTTPRoute(t *testing.T) {
+	input := `apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: test
+spec:
+  parentRefs:
+  - name: gateway
+  hostnames:
+  - foo.bar.example
+  - other.foo.bar.example
+  rules:
+  - backendRefs:
+    - name: service
+      port: 80
+`
+	expected := `apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: test
+spec:
+  parentRefs:
+  - name: gateway
+  hostnames:
+  - baz.foo.bar.example
+  - baz.other.foo.bar.example
+  rules:
+  - backendRefs:
+    - name: service
+      port: 80
+`
+	b, err := patchHTTPRoute([]byte(input), "baz")
+	require.NoError(t, err)
+	require.Equal(t, expected, string(b))
+}
+
+func TestPatchHTTPRouteNoHostnames(t *testing.T) {
+	input := `apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: test
+spec:
+  parentRefs:
+  - name: gateway
+  rules:
+  - backendRefs:
+    - name: service
+      port: 80
+`
+	b, err := patchHTTPRoute([]byte(input), "baz")
+	require.NoError(t, err)
+	require.Equal(t, input, string(b))
+}
+
 func TestPatchDeployment(t *testing.T) {
 	yaml := `apiVersion: apps/v1
 kind: Deployment
