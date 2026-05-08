@@ -206,8 +206,14 @@ func patchIngress(b []byte, feature string) ([]byte, error) {
 }
 
 // patchHTTPRoute prefixes every hostname in a Gateway API HTTPRoute with the
-// feature name. The HTTPRoute manifest is manipulated as a generic map to
+// feature name and appends the feature suffix to every backendRef name in
+// spec.rules. The HTTPRoute manifest is manipulated as a generic map to
 // avoid taking a hard dependency on the gateway-api Go module.
+//
+// HTTPRoute is a CRD, so kustomize's built-in nameReference transformer (which
+// rewrites backend service names for Ingress when nameSuffix is applied) does
+// not rename HTTPRoute backendRefs automatically. This function performs the
+// same rewrite explicitly.
 func patchHTTPRoute(b []byte, feature string) ([]byte, error) {
 	obj := map[string]interface{}{}
 	if err := yaml.Unmarshal(b, &obj); err != nil {
@@ -217,24 +223,74 @@ func patchHTTPRoute(b []byte, feature string) ([]byte, error) {
 	if !ok {
 		return b, nil
 	}
-	rawHostnames, ok := spec["hostnames"]
-	if !ok {
-		return b, nil
-	}
-	hostnames, ok := rawHostnames.([]interface{})
-	if !ok {
-		return b, nil
-	}
-	for i, h := range hostnames {
-		host, ok := h.(string)
-		if !ok {
-			continue
+
+	if rawHostnames, ok := spec["hostnames"]; ok {
+		if hostnames, ok := rawHostnames.([]interface{}); ok {
+			for i, h := range hostnames {
+				host, ok := h.(string)
+				if !ok {
+					continue
+				}
+				hostnames[i] = fmt.Sprintf("%s.%s", feature, host)
+			}
+			spec["hostnames"] = hostnames
 		}
-		hostnames[i] = fmt.Sprintf("%s.%s", feature, host)
 	}
-	spec["hostnames"] = hostnames
+
+	if rawRules, ok := spec["rules"]; ok {
+		if rules, ok := rawRules.([]interface{}); ok {
+			for _, r := range rules {
+				rule, ok := r.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				suffixBackendRefs(rule, feature)
+			}
+		}
+	}
+
 	obj["spec"] = spec
 	return yaml.Marshal(obj)
+}
+
+// suffixBackendRefs appends "-<feature>" to every backendRef name found in an
+// HTTPRoute rule. It walks both the top-level backendRefs and any
+// requestMirror filter backendRefs.
+func suffixBackendRefs(rule map[string]interface{}, feature string) {
+	if rawRefs, ok := rule["backendRefs"]; ok {
+		if refs, ok := rawRefs.([]interface{}); ok {
+			for _, ref := range refs {
+				suffixBackendRefName(ref, feature)
+			}
+		}
+	}
+	if rawFilters, ok := rule["filters"]; ok {
+		if filters, ok := rawFilters.([]interface{}); ok {
+			for _, f := range filters {
+				filter, ok := f.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if rm, ok := filter["requestMirror"].(map[string]interface{}); ok {
+					if ref, ok := rm["backendRef"]; ok {
+						suffixBackendRefName(ref, feature)
+					}
+				}
+			}
+		}
+	}
+}
+
+func suffixBackendRefName(ref interface{}, feature string) {
+	m, ok := ref.(map[string]interface{})
+	if !ok {
+		return
+	}
+	name, ok := m["name"].(string)
+	if !ok {
+		return
+	}
+	m["name"] = fmt.Sprintf("%s-%s", name, feature)
 }
 
 func patchDeployment(b []byte, tag string) ([]byte, error) {

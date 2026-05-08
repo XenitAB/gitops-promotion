@@ -149,7 +149,7 @@ spec:
   - name: gateway
   rules:
   - backendRefs:
-    - name: service
+    - name: service-baz
       port: 80
 `
 	b, err := patchHTTPRoute([]byte(input), "baz")
@@ -170,9 +170,21 @@ spec:
     - name: service
       port: 80
 `
+	expected := `apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: test
+spec:
+  parentRefs:
+  - name: gateway
+  rules:
+  - backendRefs:
+    - name: service-baz
+      port: 80
+`
 	b, err := patchHTTPRoute([]byte(input), "baz")
 	require.NoError(t, err)
-	require.Equal(t, input, string(b))
+	require.Equal(t, expected, string(b))
 }
 
 func TestPatchDeployment(t *testing.T) {
