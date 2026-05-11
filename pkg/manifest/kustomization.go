@@ -245,6 +245,7 @@ func patchHTTPRoute(b []byte, feature string) ([]byte, error) {
 					continue
 				}
 				suffixBackendRefs(rule, feature)
+				prefixFilterHostnames(rule, feature)
 			}
 		}
 	}
@@ -286,11 +287,51 @@ func suffixBackendRefName(ref interface{}, feature string) {
 	if !ok {
 		return
 	}
+	// Only rewrite refs targeting core Services. The Gateway API defaults
+	// group="" and kind="Service" when omitted, so treat unset as Service.
+	if g, ok := m["group"].(string); ok && g != "" {
+		return
+	}
+	if k, ok := m["kind"].(string); ok && k != "" && k != "Service" {
+		return
+	}
 	name, ok := m["name"].(string)
 	if !ok {
 		return
 	}
 	m["name"] = fmt.Sprintf("%s-%s", name, feature)
+}
+
+// prefixFilterHostnames prefixes the hostname of any RequestRedirect or
+// URLRewrite filter on an HTTPRoute rule with the feature name. Without this
+// rewrite a request to e.g. https://feature.web.example.com would be
+// redirected back to the non-feature host web.example.com.
+func prefixFilterHostnames(rule map[string]interface{}, feature string) {
+	rawFilters, ok := rule["filters"]
+	if !ok {
+		return
+	}
+	filters, ok := rawFilters.([]interface{})
+	if !ok {
+		return
+	}
+	for _, f := range filters {
+		filter, ok := f.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		for _, key := range []string{"requestRedirect", "urlRewrite"} {
+			inner, ok := filter[key].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			host, ok := inner["hostname"].(string)
+			if !ok || host == "" {
+				continue
+			}
+			inner["hostname"] = fmt.Sprintf("%s.%s", feature, host)
+		}
+	}
 }
 
 func patchDeployment(b []byte, tag string) ([]byte, error) {
