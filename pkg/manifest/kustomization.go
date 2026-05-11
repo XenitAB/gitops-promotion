@@ -206,8 +206,14 @@ func patchIngress(b []byte, feature string) ([]byte, error) {
 }
 
 // patchHTTPRoute prefixes every hostname in a Gateway API HTTPRoute with the
-// feature name. The HTTPRoute manifest is manipulated as a generic map to
+// feature name and appends the feature suffix to every backendRef name in
+// spec.rules. The HTTPRoute manifest is manipulated as a generic map to
 // avoid taking a hard dependency on the gateway-api Go module.
+//
+// HTTPRoute is a CRD, so kustomize's built-in nameReference transformer (which
+// rewrites backend service names for Ingress when nameSuffix is applied) does
+// not rename HTTPRoute backendRefs automatically. This function performs the
+// same rewrite explicitly.
 func patchHTTPRoute(b []byte, feature string) ([]byte, error) {
 	obj := map[string]interface{}{}
 	if err := yaml.Unmarshal(b, &obj); err != nil {
@@ -217,24 +223,115 @@ func patchHTTPRoute(b []byte, feature string) ([]byte, error) {
 	if !ok {
 		return b, nil
 	}
-	rawHostnames, ok := spec["hostnames"]
-	if !ok {
-		return b, nil
+
+	if rawHostnames, ok := spec["hostnames"]; ok {
+		if hostnames, ok := rawHostnames.([]interface{}); ok {
+			for i, h := range hostnames {
+				host, ok := h.(string)
+				if !ok {
+					continue
+				}
+				hostnames[i] = fmt.Sprintf("%s.%s", feature, host)
+			}
+			spec["hostnames"] = hostnames
+		}
 	}
-	hostnames, ok := rawHostnames.([]interface{})
-	if !ok {
-		return b, nil
+
+	if rawRules, ok := spec["rules"]; ok {
+		if rules, ok := rawRules.([]interface{}); ok {
+			for _, r := range rules {
+				rule, ok := r.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				suffixBackendRefs(rule, feature)
+				prefixFilterHostnames(rule, feature)
+			}
+		}
 	}
-	for i, h := range hostnames {
-		host, ok := h.(string)
+
+	obj["spec"] = spec
+	return yaml.Marshal(obj)
+}
+
+// suffixBackendRefs appends "-<feature>" to every backendRef name found in an
+// HTTPRoute rule. It walks both the top-level backendRefs and any
+// requestMirror filter backendRefs.
+func suffixBackendRefs(rule map[string]interface{}, feature string) {
+	if rawRefs, ok := rule["backendRefs"]; ok {
+		if refs, ok := rawRefs.([]interface{}); ok {
+			for _, ref := range refs {
+				suffixBackendRefName(ref, feature)
+			}
+		}
+	}
+	if rawFilters, ok := rule["filters"]; ok {
+		if filters, ok := rawFilters.([]interface{}); ok {
+			for _, f := range filters {
+				filter, ok := f.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if rm, ok := filter["requestMirror"].(map[string]interface{}); ok {
+					if ref, ok := rm["backendRef"]; ok {
+						suffixBackendRefName(ref, feature)
+					}
+				}
+			}
+		}
+	}
+}
+
+func suffixBackendRefName(ref interface{}, feature string) {
+	m, ok := ref.(map[string]interface{})
+	if !ok {
+		return
+	}
+	// Only rewrite refs targeting core Services. The Gateway API defaults
+	// group="" and kind="Service" when omitted, so treat unset as Service.
+	if g, ok := m["group"].(string); ok && g != "" {
+		return
+	}
+	if k, ok := m["kind"].(string); ok && k != "" && k != "Service" {
+		return
+	}
+	name, ok := m["name"].(string)
+	if !ok {
+		return
+	}
+	m["name"] = fmt.Sprintf("%s-%s", name, feature)
+}
+
+// prefixFilterHostnames prefixes the hostname of any RequestRedirect or
+// URLRewrite filter on an HTTPRoute rule with the feature name. Without this
+// rewrite a request to e.g. https://feature.web.example.com would be
+// redirected back to the non-feature host web.example.com.
+func prefixFilterHostnames(rule map[string]interface{}, feature string) {
+	rawFilters, ok := rule["filters"]
+	if !ok {
+		return
+	}
+	filters, ok := rawFilters.([]interface{})
+	if !ok {
+		return
+	}
+	for _, f := range filters {
+		filter, ok := f.(map[string]interface{})
 		if !ok {
 			continue
 		}
-		hostnames[i] = fmt.Sprintf("%s.%s", feature, host)
+		for _, key := range []string{"requestRedirect", "urlRewrite"} {
+			inner, ok := filter[key].(map[string]interface{})
+			if !ok {
+				continue
+			}
+			host, ok := inner["hostname"].(string)
+			if !ok || host == "" {
+				continue
+			}
+			inner["hostname"] = fmt.Sprintf("%s.%s", feature, host)
+		}
 	}
-	spec["hostnames"] = hostnames
-	obj["spec"] = spec
-	return yaml.Marshal(obj)
 }
 
 func patchDeployment(b []byte, tag string) ([]byte, error) {
