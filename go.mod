@@ -1,6 +1,6 @@
 module github.com/xenitab/gitops-promotion
 
-go 1.17
+go 1.24
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
@@ -56,7 +56,7 @@ require (
 	github.com/jfrog/gofrog v1.1.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.14.1 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mholt/archiver/v3 v3.5.1-0.20210618180617-81fac4ba96e4 // indirect
